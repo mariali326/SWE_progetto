@@ -1,0 +1,7 @@
+routeId,departureAirportCode,arrivalAirportCode,distance
+R001,JFK,LAX,3983
+R002,LAX,ORD,2805
+R003,LHR,JFK,5555
+R004,CDG,SIN,10767
+R005,FLR,PVG,14047
+R006,LGA,LAX,3015

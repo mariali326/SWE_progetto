@@ -1,0 +1,5 @@
+bookingId,passengerUsername,flightNumber,bookingDate,ticketIds,totalAmount
+BK001,jdoe,F001,2024-09-19T08:05,T001,500.0
+BK003,ajohnson,F003,2024-09-22T21:59,T003,800.0
+BK004,bbrown,F001,2024-09-23T19:25,T004,950.0
+BK005,smorini,F005,2024-09-30T09:50,T005,8400.0

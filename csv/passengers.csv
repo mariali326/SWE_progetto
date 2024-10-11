@@ -1,0 +1,9 @@
+username,name,surname,email,phoneNumber,password,notificationTypes,notificationChannel,paymentMethod
+jdoe,John,Doe,jdoe@example.com,3271555555,pass123,,EMAIL,CREDIT_CARD
+ajohnson,Alice,Johnson,ajohnson@example.com,,pass456,DELAY,EMAIL,PAYPAL
+mwhite,Mary,White,mwhite@example.com,3478888888,pass789,GATE_CHANGE-DELAY,SMS-EMAIL,DEBIT_CARD
+richardroe,Richard,Roe,richardroe@example.com,9876543210,password789,,EMAIL,BANK_TRANSFER
+jsmith,Jane,Smith,jsmith@example.com,,password145,CANCELLATION,EMAIL,CREDIT_CARD
+bbrown,Bob,Brown,bbrown@example.com,,pass01234,,,PAYPAL
+smorini,Samanta,Morini,smorini@example.com,3289999999,pass45678,SPECIAL_OFFER,SMS,BANK_TRANSFER
+,Andrea,Morini,smorini@example.com,,,,,
