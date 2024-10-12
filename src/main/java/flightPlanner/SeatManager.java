@@ -1,9 +1,6 @@
 package flightPlanner;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,8 +8,9 @@ import java.util.stream.Collectors;
 public class SeatManager {
     private CSVManager csvManager;
     private List<Seat> seats;
+    private String csvFilePath = "csv/seats.csv";
 
-    public SeatManager(String csvFilePath) throws IOException {
+    public SeatManager() throws IOException {
         // Carica il file CSV dal classpath
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(csvFilePath);
         if (inputStream == null) {
@@ -34,19 +32,16 @@ public class SeatManager {
                     record[2],
                     Boolean.parseBoolean(record[3])
             );
+            // Assegnare username del passeggero se il posto è occupato
+            if (record.length > 4) {
+                seat.setPassengerUsername(record[4]);
+            }
             seats.add(seat);
         }
     }
 
     public List<Seat> getAllSeats() {
         return seats;
-    }
-
-    // Metodo per ottenere tutti i posti associati a un determinato volo
-    public List<Seat> getSeatsByFlight(String stringNumber) {
-        return seats.stream()
-                .filter(seat -> seat.getFlightNumber().equals(stringNumber))
-                .collect(Collectors.toList());
     }
 
     public Seat getSeatByNumber(String seatNumber) {
@@ -67,26 +62,33 @@ public class SeatManager {
             seat.setAvailable(true);
             seats.add(seat);
             saveAllSeats();
-            System.out.println("Seat added: " + seat.getSeatNumber());
+            System.out.println("Seat on flight " + seat.getFlightNumber()+ " added: " + seat.getSeatNumber());
         } else {
-            System.out.println("Seat already exists: " + seat.getSeatNumber());
+            throw new IllegalArgumentException("Seat already exists on flight " + seat.getFlightNumber() +": " + seat.getSeatNumber());
         }
     }
 
     private void saveAllSeats() throws IOException {
         List<String[]> records = new ArrayList<>();
         // Header
-        records.add(new String[]{"seatNumber", "classType", "flightNumber", "isAvailable"});
+        records.add(new String[]{"seatNumber", "classType", "flightNumber", "isAvailable", "passengerUsername"});
         // Dati
         for (Seat seat : seats) {
             records.add(new String[]{
                     seat.getSeatNumber(),
                     seat.getClassType(),
                     seat.getFlightNumber(),
-                    String.valueOf(seat.isAvailable())
+                    String.valueOf(seat.isAvailable()),
+                    seat.getPassengerUsername() == null ? "" : seat.getPassengerUsername()
             });
         }
-        csvManager.writeAll(records);
+        try {
+            csvManager.writeAll(records, csvFilePath);
+        } catch (IOException e) {
+            System.err.println("An error occurred while saving seats on file CSV: " + e.getMessage());
+            System.out.println("Error details:");
+            e.printStackTrace();
+        }
     }
 
     // Metodo per aggiornare la disponibilità di un posto
@@ -132,13 +134,33 @@ public class SeatManager {
     public boolean releaseSeat(String seatNumber) throws IOException {
         Seat seat = getSeatByNumber(seatNumber);
         if (seat != null && !seat.isAvailable()) {
-            seat.setAvailable(true); // Imposta il posto come disponibile
+            seat.releaseSeat();
             saveAllSeats(); // Salva lo stato aggiornato
-            System.out.println("Seat " + seatNumber + " successfully released.");
+            System.out.println("Seat " + seatNumber + " successfully released and it's now available.");
             return true; // Cancellazione della prenotazione avvenuta
         } else {
             System.out.println("Seat " + seatNumber + " is already available or doesn't exist.");
             return false; // Errore nella cancellazione
         }
+    }
+
+    public void assignSeatToPassenger(String flightNumber, Passenger passenger) throws IOException {
+        Seat availableSeat = findAvailableSeat(flightNumber);
+        if (availableSeat != null) {
+            availableSeat.setPassenger(passenger);
+            saveAllSeats();
+            System.out.println("Seat " + availableSeat.getSeatNumber() + " assigned to " + passenger.getName());
+        } else {
+            System.out.println("No available seat for flight " + flightNumber);
+        }
+    }
+
+    public Seat findAvailableSeat(String flightNumber) {
+        for (Seat seat : seats) {
+            if (seat.getFlightNumber(   ).equals(flightNumber) && seat.isAvailable()) {
+                return seat;
+            }
+        }
+        return null; // Nessun posto disponibile
     }
 }

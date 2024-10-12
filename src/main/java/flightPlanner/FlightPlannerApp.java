@@ -16,11 +16,7 @@ public class FlightPlannerApp extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        flightPlanner = new FlightPlanner("/Users/maria/IdeaProjects/SWE_progetto/csv/flights.csv",
-                "/Users/maria/IdeaProjects/SWE_progetto/csv/routes.csv",
-                "/Users/maria/IdeaProjects/SWE_progetto/csv/seats.csv",
-                "/Users/maria/IdeaProjects/SWE_progetto/csv/bookings.csv",
-                "/Users/maria/IdeaProjects/SWE_progetto/csv/payments.csv");
+        flightPlanner = new FlightPlanner();
         authManager = new AuthManager();
         primaryStage = stage;
 
@@ -55,7 +51,7 @@ public class FlightPlannerApp extends Application {
         });
 
         registerButton.setOnAction(e -> {
-            //otteniamo le informazioni digitati dall'utente
+            // Otteniamo le informazioni digitati dall'utente
             String username = usernameField.getText();
             String password = passwordField.getText();
             String email = emailField.getText();
@@ -112,10 +108,10 @@ public class FlightPlannerApp extends Application {
             showLoginScreen();
         });
 
-        //aggiunge elementi al layout
+        // Aggiunge elementi al layout
         vbox.getChildren().addAll(titleLable, flightLabel, flightNumberField, departureField, arrivalField, addFlightBtn, logoutButton);
 
-        //configura scena e stage
+        // Configura scena e stage
         Scene scene = new Scene(vbox, 400, 300);
         primaryStage.setScene(scene);
         primaryStage.setTitle("Flight Planner App");

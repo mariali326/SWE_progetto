@@ -1,34 +1,30 @@
 package flightPlanner;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.io.IOException;
 
 public class BookingManager {
     private CSVManager csvManager;
     private List<Booking> bookings;
     private FlightManager flightManager;
+    private String csvFilePath = "csv/bookings.csv";
 
-    public BookingManager(String csvFilePath, TicketManager ticketManager) throws IOException {
+    public BookingManager(FlightManager flightManager,TicketManager ticketManager) throws IOException {
         // Carica il file CSV dal classpath
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(csvFilePath);
         if (inputStream == null) {
             throw new FileNotFoundException("File not found in resources: " + csvFilePath);
         }
+
+        this.flightManager = flightManager;
         this.csvManager = new CSVManager(new InputStreamReader(inputStream));
         this.bookings = new ArrayList<>();
         loadBookings(ticketManager);
     }
 
-    public BookingManager(FlightManager flightManager) {
-        this.flightManager = flightManager;
-    }
-
-    public void bookFlight(String stringId, Passenger passenger) throws IOException {
+    public void bookFlight(String stringId, Passenger passenger) {
         Flight flight = flightManager.getFlightByNumber(stringId);
         if (flight != null) {
             flight.subscribe(passenger);  // Aggiungere il passeggero come osservatore del volo
@@ -39,6 +35,11 @@ public class BookingManager {
     }
 
     public void addBooking(Booking booking) throws IOException {
+        for (Booking existingBooking : bookings) {
+            if (existingBooking.getBookingId().equalsIgnoreCase(booking.getBookingId())) {
+                throw new IllegalArgumentException("Booking " + booking.getBookingId() + " already exists.");
+            }
+        }
         bookings.add(booking);
         String ticketIdsConcatenated = String.join("|",
                 booking.getTickets().stream().map(Ticket::getTicketNumber).toArray(String[]::new));
@@ -48,10 +49,15 @@ public class BookingManager {
                 ticketIdsConcatenated,
                 String.valueOf(booking.getTotalAmount())
         };
-        csvManager.appendRecord(record);
+        try {
+            csvManager.appendRecord(record, csvFilePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new IOException("An error occurred while writing a booking on file CSV", e);
+        }
     }
 
-    public void removeBooking(String bookingId) throws IOException {
+    public void removeBooking(String bookingId) {
         Booking toRemove = null;
         for (Booking booking : bookings) {
             if (booking.getBookingId().equalsIgnoreCase(bookingId)) {
@@ -62,6 +68,8 @@ public class BookingManager {
         if (toRemove != null) {
             bookings.remove(toRemove);
             saveAllBookings();
+        } else {
+        System.out.println("Booking " + bookingId +" not found.");
         }
     }
 
@@ -111,7 +119,7 @@ public class BookingManager {
         saveAllBookings();
     }
 
-    private void saveAllBookings() throws IOException {
+    private void saveAllBookings() {
         List<String[]> records = new ArrayList<>();
         // Header
         records.add(new String[]{"bookingId", "passengerUsername", "flightNumber", "bookingDate", "ticketIds", "totalAmount"});
@@ -128,7 +136,12 @@ public class BookingManager {
                     String.valueOf(booking.getTotalAmount())
             });
         }
-        csvManager.writeAll(records);
+        try {
+            csvManager.writeAll(records, csvFilePath);
+        }catch (IOException e) {
+            System.err.println("An error occurred while saving bookings on file CSV: " + e.getMessage());
+            System.out.println("Error details:");
+            e.printStackTrace();
+        }
     }
-
 }

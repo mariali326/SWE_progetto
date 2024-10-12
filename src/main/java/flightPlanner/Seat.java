@@ -5,6 +5,8 @@ public class Seat {
     private String classType; // es. "Economy", "Business", "First"
     private String flightNumber;
     private boolean isAvailable;
+    private Passenger passenger;
+    private String passengerUsername;
 
     public Seat(String seatNumber, String classType, String flightNumber, boolean isAvailable) {
         this.seatNumber = seatNumber;
@@ -31,5 +33,33 @@ public class Seat {
 
     public String getFlightNumber() {
         return flightNumber;
+    }
+
+    public Passenger getPassenger() {
+        return passenger;
+    }
+
+    public void setPassenger(Passenger passenger) {
+        if (this.isAvailable) {
+            this.passenger = passenger;
+            this.passengerUsername = passenger.getUsername();
+            this.isAvailable = false;  // Il posto non è più disponibile
+        } else {
+            System.out.println("Seat " + seatNumber + " is already assigned.");
+        }
+    }
+
+    public void setPassengerUsername(String passengerUsername) {
+        this.passengerUsername = passengerUsername;
+    }
+
+    public String getPassengerUsername() {
+        return passengerUsername;
+    }
+
+    public void releaseSeat() {
+        this.passenger = null;
+        this.passengerUsername = null;
+        this.isAvailable = true;
     }
 }

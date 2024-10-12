@@ -1,18 +1,16 @@
 package flightPlanner;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.io.IOException;
-import java.time.LocalDateTime;
 
 public class PaymentManager {
     private CSVManager csvManager;
     private List<Payment> payments;
+    private String csvFilePath ="csv/payments.csv";
 
-    public PaymentManager(String csvFilePath) throws IOException {
+    public PaymentManager() throws IOException {
         // Carica il file CSV dal classpath
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(csvFilePath);
         if (inputStream == null) {
@@ -33,22 +31,35 @@ public class PaymentManager {
                     record[1],
                     Double.parseDouble(record[2]),
                     LocalDateTime.parse(record[3]),
-                    PaymentMethod.valueOf(record[4]) // converte la stringa letta in un enum
+                    PaymentMethod.valueOf(record[4]), // converte la stringa letta in un enum
+                    record[5]
             );
             payments.add(payment);
         }
     }
 
     public void addPayment(Payment payment) throws IOException {
+        for (Payment existingPayment : payments) {
+            if (existingPayment.getPaymentId().equalsIgnoreCase(payment.getPaymentId())) {
+                throw new IllegalArgumentException("Payment " + payment.getPaymentId() + " already exists.");
+            }
+        }
         payments.add(payment);
         String[] record = {
                 payment.getPaymentId(),
                 payment.getBookingId(),
                 String.valueOf(payment.getAmount()),
+                payment.getPaymentDate().toString(),
                 payment.getPaymentMethod().name(),  // Converte l'enum in stringa
-                payment.getPaymentDate().toString()
+                payment.getPassengerUsername()
         };
-        csvManager.appendRecord(record);
+        try {
+            csvManager.appendRecord(record,csvFilePath);
+        }catch (IOException e) {
+            System.out.println("Error details:");
+            e.printStackTrace();
+            throw new IOException("An error occurred while writing a payment on file CSV", e);
+        }
     }
 
     public void removePayment(String paymentId) throws IOException {
@@ -62,6 +73,8 @@ public class PaymentManager {
         if (toRemove != null) {
             payments.remove(toRemove);
             saveAllPayments();
+        } else {
+            System.out.println("Payment " + paymentId + " not found.");
         }
     }
 
@@ -77,18 +90,26 @@ public class PaymentManager {
     private void saveAllPayments() throws IOException {
         List<String[]> records = new ArrayList<>();
         // Header
-        records.add(new String[]{"paymentId", "bookingId", "amount", "paymentMethod", "paymentDate"});
+        records.add(new String[]{"paymentId", "bookingId", "amount", "paymentDate", "paymentMethod", "passengerUsername"});
         // Dati
         for (Payment payment : payments) {
             records.add(new String[]{
                     payment.getPaymentId(),
                     payment.getBookingId(),
                     String.valueOf(payment.getAmount()),
+                    payment.getPaymentDate().toString(),
                     payment.getPaymentMethod().name(),  // Converte l'enum in stringa
-                    payment.getPaymentDate().toString()
+                    payment.getPassengerUsername()
+
             });
         }
-        csvManager.writeAll(records);
+        try {
+            csvManager.writeAll(records,csvFilePath);
+        }catch (IOException e) {
+            System.err.println("An error occurred while saving payments on file CSV: " + e.getMessage());
+            System.out.println("Error details:");
+            e.printStackTrace();
+        }
     }
 
     public void updatePayment(Payment updatedPayment) throws IOException {

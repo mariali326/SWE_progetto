@@ -1,8 +1,8 @@
 package flightPlanner;
 
 public class Airport {
-    private String code;//es.FLR
-    private String name;//es. aeroporto di Firenze-Peretola
+    private String code;// es.FLR
+    private String name;// es. aeroporto di Firenze-Peretola
     private String city;
     private String country;
 

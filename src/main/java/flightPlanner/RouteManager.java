@@ -1,18 +1,16 @@
 package flightPlanner;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.io.IOException;
 
 
 public class RouteManager {
     private CSVManager csvManager;
     private List<Route> routes;
+    private String csvFilePath = "csv/routes.csv";
 
-    public RouteManager(String csvFilePath) throws IOException {
+    public RouteManager() throws IOException {
         // Carica il file CSV dal classpath
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(csvFilePath);
         if (inputStream == null) {
@@ -24,6 +22,11 @@ public class RouteManager {
     }
 
     public void addRoute(Route route) throws IOException {
+        for (Route existingRoute : routes) {
+            if (existingRoute.getRouteId().equalsIgnoreCase(route.getRouteId())) {
+                throw new IllegalArgumentException("Route " + route.getRouteId() + " already exists.");
+            }
+        }
         routes.add(route);
         String[] record = {
                 route.getRouteId(),
@@ -31,7 +34,13 @@ public class RouteManager {
                 route.getArrivalAirportCode(),
                 String.valueOf(route.getDistance())
         };
-        csvManager.appendRecord(record);
+        try {
+            csvManager.appendRecord(record, csvFilePath);
+        } catch (IOException e) {
+            System.out.println("Error details:");
+            e.printStackTrace();
+            throw new IOException("An error occurred while writing on a file CSV", e);
+        }
     }
 
     public void removeRoute(String routeId) throws IOException {
@@ -45,6 +54,8 @@ public class RouteManager {
         if (toRemove != null) {
             routes.remove(toRemove);
             saveAllRoutes();
+        } else {
+            System.out.println("Route " + routeId +" not found.");
         }
     }
 
@@ -110,6 +121,12 @@ public class RouteManager {
                     String.valueOf(route.getDistance())
             });
         }
-        csvManager.writeAll(records);
+        try {
+            csvManager.writeAll(records, csvFilePath);
+        }catch (IOException e) {
+            System.err.println("An error occurred while saving on file CSV: " + e.getMessage());
+            System.out.println("Error details:");
+            e.printStackTrace();
+        }
     }
 }

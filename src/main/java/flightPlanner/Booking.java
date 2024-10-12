@@ -44,16 +44,16 @@ public class Booking {
         return totalAmount;
     }
 
-    @Override
-    public String toString() {
-        return "Booking ID: " + bookingId + ", Flight number: " + getFlightNumber() + ", Date: " + bookingDate;
-    }
-
     public void removeTicket(String ticketId) {
         tickets.removeIf(ticket -> ticket.getTicketNumber().equalsIgnoreCase(ticketId));
     }
 
     public void addTicket(Ticket ticket) {
         tickets.add(ticket);
+    }
+
+    @Override
+    public String toString() {
+        return "Booking ID: " + bookingId + ", Flight number: " + getFlightNumber() + ", Date: " + bookingDate;
     }
 }

@@ -1,17 +1,15 @@
 package flightPlanner;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TicketManager {
     private CSVManager csvManager;
     private List<Ticket> tickets;
+    private String csvFilePath ="csv/tickets.csv";
 
-    public TicketManager(String csvFilePath) throws IOException {
+    public TicketManager() throws IOException {
         // Carica il file CSV dal classpath
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(csvFilePath);
         if (inputStream == null) {
@@ -32,7 +30,8 @@ public class TicketManager {
                     record[1],
                     record[2],
                     record[3],
-                    Double.parseDouble(record[4])
+                    Double.parseDouble(record[4]),
+                    record[5]
             );
             tickets.add(ticket);
         }
@@ -52,15 +51,27 @@ public class TicketManager {
     }
 
     public void addTicket(Ticket ticket) throws IOException {
+        for (Ticket existingTicket : tickets) {
+            if (existingTicket.getTicketNumber().equalsIgnoreCase(ticket.getTicketNumber())) {
+                throw new IllegalArgumentException("The ticket " + ticket.getTicketNumber() + " already exists.");
+            }
+        }
         tickets.add(ticket);
         String[] record = {
                 ticket.getTicketNumber(),
                 ticket.getBookingId(),
                 ticket.getFlightNumber(),
                 ticket.getSeatNumber(),
-                String.valueOf(ticket.getPrice())
+                String.valueOf(ticket.getPrice()),
+                ticket.getPassengerUsername()
         };
-        csvManager.appendRecord(record);
+        try {
+            csvManager.appendRecord(record,csvFilePath);
+        } catch (IOException e) {
+            System.out.println("Error details:");
+            e.printStackTrace();
+            throw new IOException("An error occurred while writing a ticket on file CSV", e);
+        }
     }
 
     public void removeTicket(String ticketId) throws IOException {
@@ -74,6 +85,8 @@ public class TicketManager {
         if (toRemove != null) {
             tickets.remove(toRemove);
             saveAllTickets();
+        } else {
+            System.out.println("Ticket " + ticketId +" not found.");
         }
     }
 
@@ -91,7 +104,7 @@ public class TicketManager {
     private void saveAllTickets() throws IOException {
         List<String[]> records = new ArrayList<>();
         // Header
-        records.add(new String[]{"ticketNumber", "bookingId", "flightNumber", "seatNumber", "price"});
+        records.add(new String[]{"ticketNumber", "bookingId", "flightNumber", "seatNumber", "price", "passengerUsername"});
         // Dati
         for (Ticket ticket : tickets) {
             records.add(new String[]{
@@ -99,9 +112,16 @@ public class TicketManager {
                     ticket.getBookingId(),
                     ticket.getFlightNumber(),
                     ticket.getSeatNumber(),
-                    String.valueOf(ticket.getPrice())
+                    String.valueOf(ticket.getPrice()),
+                    ticket.getPassengerUsername()
             });
         }
-        csvManager.writeAll(records);
+        try {
+            csvManager.writeAll(records, csvFilePath);
+        }catch (IOException e) {
+            System.err.println("An error occurred while saving tickets on file CSV: " + e.getMessage());
+            System.out.println("Error details:");
+            e.printStackTrace();
+        }
     }
 }

@@ -6,11 +6,8 @@ import com.opencsv.exceptions.CsvException;
 import java.io.*;
 import java.util.List;
 
-//Da riguardare
 public class CSVManager {
     private Reader reader;
-    private Writer writer;
-    //private String filePath;
     private char separator;
     private char quoteChar;
 
@@ -24,10 +21,6 @@ public class CSVManager {
         this.quoteChar = quoteChar;
     }
 
-    public void setWriter(Writer writer) {
-        this.writer = writer;
-    }
-
     public List<String[]> readAll() throws IOException {
         List<String[]> records;
         try (CSVReader csvReader = new CSVReader(reader)) {
@@ -38,21 +31,20 @@ public class CSVManager {
         return records;
     }
 
-    public void writeAll(List<String[]> records) throws IOException {
-        try (CSVWriter csvWriter = new CSVWriter(writer, separator, quoteChar, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END)) {
+    public void writeAll(List<String[]> records, String filePath) throws IOException {
+        // Usare true per abilitare la modalità append
+        // Blocco try-with-resources per gestire la chiusura automatica delle risorse
+        try (FileWriter fileWriter = new FileWriter(filePath, true);
+             CSVWriter csvWriter = new CSVWriter(fileWriter, separator, quoteChar, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END)) {
             csvWriter.writeAll(records);
         }
     }
 
     // Metodo per aggiungere un singolo record al file CSV
-    public void appendRecord(String[] record) throws IOException {
-        if (writer == null) {
-            throw new IllegalStateException("Writer not set. Please set a writer before appending.");
-        }
-        try (CSVWriter csvWriter = new CSVWriter(writer, separator, quoteChar, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END)) {
+    public void appendRecord(String[] record, String filePath) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(filePath, true);
+             CSVWriter csvWriter = new CSVWriter(fileWriter, separator, quoteChar, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END)) {
             csvWriter.writeNext(record);
         }
     }
-
-
 }

@@ -51,7 +51,7 @@ public class FlightSearchService {
                 .collect(Collectors.toList());
     }
 
-    // cercare voli per aeroporto di partenza e di arrivo
+    // Cercare voli per aeroporto di partenza e di arrivo
     public List<Flight> searchFlightsByAirports(String departureCode, String arrivalCode) {
         String departure = airportManager.getAirportByCode(departureCode).getName();
         String arrival = airportManager.getAirportByCode(arrivalCode).getName();
@@ -67,7 +67,7 @@ public class FlightSearchService {
         return List.of(); // Nessun volo trovato
     }
 
-    //flitra i voli in base alla disponibilità di posti
+    // Filtrare i voli in base alla disponibilità di posti
     public List<Flight> searchAvailableFlights(String departure, String arrival) {
         List<Flight> flights = searchFlights(departure, arrival);
         return flights.stream()

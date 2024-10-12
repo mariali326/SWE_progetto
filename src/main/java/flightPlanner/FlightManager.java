@@ -1,8 +1,6 @@
 package flightPlanner;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,8 +10,9 @@ import java.io.IOException;
 public class FlightManager {
     private CSVManager csvManager;
     private List<Flight> flights;
+    private String csvFilePath = "csv/flights.csv";
 
-    public FlightManager(String csvFilePath) throws IOException {
+    public FlightManager() throws IOException {
         // Carica il file CSV dal classpath
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(csvFilePath);
         if (inputStream == null) {
@@ -23,7 +22,6 @@ public class FlightManager {
         this.flights = loadFlights();
 
     }
-
 
     private List<Flight> loadFlights() throws IOException {
         List<String[]> records = csvManager.readAll();
@@ -57,18 +55,29 @@ public class FlightManager {
     }
 
     public void addFlight(Flight flight) throws IOException {
-        flights.add(flight);
-        String[] record = {
-                flight.getFlightNumber(),
-                flight.getDepartureAirportCode(),
-                flight.getArrivalAirportCode(),
-                String.valueOf(flight.getDepartureTime()),
-                String.valueOf(flight.getArrivalTime())
-        };
-        csvManager.appendRecord(record);
+        Flight existingFlight = getFlightByNumber(flight.getFlightNumber());
+        if (existingFlight != null) {
+            throw new IllegalArgumentException("Flight " + flight.getFlightNumber() + " already exists.");
+        } else {
+            flights.add(flight);
+            String[] record = {
+                    flight.getFlightNumber(),
+                    flight.getDepartureAirportCode(),
+                    flight.getArrivalAirportCode(),
+                    String.valueOf(flight.getDepartureTime()),
+                    String.valueOf(flight.getArrivalTime())
+            };
+            try {
+                csvManager.appendRecord(record,csvFilePath);
+            } catch (IOException e) {
+                System.out.println("Error details:");
+                e.printStackTrace();
+                throw new IOException("An error occurred while writing a flight on file CSV", e);
+            }
+        }
     }
 
-    public void removeFlight(String flightNumber) throws IOException {
+    public void removeFlight(String flightNumber) {
         Flight toRemove = null;
         for (Flight flight : flights) {
             if (flight.getFlightNumber().equalsIgnoreCase(flightNumber)) {
@@ -79,6 +88,8 @@ public class FlightManager {
         if (toRemove != null) {
             flights.remove(toRemove);
             saveAllFlights();
+        } else {
+            System.out.println("Flight" + flightNumber + " not found.");
         }
     }
 
@@ -90,7 +101,7 @@ public class FlightManager {
         }
     }
 
-    private void saveAllFlights() throws IOException {
+    private void saveAllFlights() {
         List<String[]> records = new ArrayList<>();
         // Header
         records.add(new String[]{"flightNumber", "departureAirportCode", "arrivalAirportCode", "departureTime", "arrivalTime"});
@@ -104,6 +115,13 @@ public class FlightManager {
                     String.valueOf(flight.getArrivalTime())
             });
         }
-        csvManager.writeAll(records);
+
+        try {
+            csvManager.writeAll(records, csvFilePath);
+            } catch(IOException e){
+                System.err.println("An error occurred while saving flights on file CSV: " + e.getMessage());
+                System.out.println("Error details:");
+                e.printStackTrace(); // Per ottenere maggiori dettagli sull'errore
+            }
     }
 }

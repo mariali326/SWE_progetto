@@ -3,10 +3,12 @@ package flightPlanner;
 public abstract class User {
     private String username;
     private String password;
+    private String email;
 
-    public User(String username, String password){
+    public User(String username, String password, String email){
         this.username = username;
         this.password = password;
+        this.email = email;
     }
 
     public String getUsername(){
@@ -15,6 +17,10 @@ public abstract class User {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public abstract void displayRole();

@@ -1,11 +1,9 @@
 package flightPlanner;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.io.IOException;
 
 public class AirportManager {
     private CSVManager csvManager;
@@ -28,28 +26,45 @@ public class AirportManager {
         // Salta l'header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
-            Airport airport = new Airport(
-                    record[0],
-                    record[1],
-                    record[2],
-                    record[3]
-            );
-            airports.add(airport);
+            if (record.length >= 4) {
+                Airport airport = new Airport(
+                        record[0],
+                        record[1],
+                        record[2],
+                        record[3]
+                );
+                airports.add(airport);
+            } else {
+                System.err.println("Invalid format: " + Arrays.toString(record));
+            }
         }
     }
 
     public void addAirport(Airport airport) throws IOException {
+        for (Airport existingAirport : airports) {
+            if (existingAirport.getCode().equalsIgnoreCase(airport.getCode())) {
+                throw new IllegalArgumentException("Airport " + airport.getCode() + " already exists.");
+            }
+        }
         airports.add(airport);
         String[] record = {airport.getCode(), airport.getName(), airport.getCity(), airport.getCountry()};
-        csvManager.appendRecord(record);
+        try {
+            csvManager.appendRecord(record, csvFilePath);
+        } catch (IOException e) {
+            System.out.println("Error details:");
+            e.printStackTrace();
+            throw new IOException("An error occurred while writing an airport on file CSV", e);
+        }
     }
 
-    public void removeAirport(String code) throws IOException {
+    public void removeAirport(String code) {
         Airport toRemove = null;
         for (Airport airport : airports) {
             if (airport.getCode().equalsIgnoreCase(code)) {
                 toRemove = airport;
                 break;
+            } else {
+                System.out.println("Airport " + code +" not found.");
             }
         }
         if (toRemove != null) {
@@ -58,7 +73,7 @@ public class AirportManager {
         }
     }
 
-    public void updateAirport(Airport updatedAirport) throws IOException {
+    public void updateAirport(Airport updatedAirport) {
         for (int i = 0; i < airports.size(); i++) {
             Airport airport = airports.get(i);
             if (airport.getCode().equalsIgnoreCase(updatedAirport.getCode())) {
@@ -69,7 +84,7 @@ public class AirportManager {
         saveAllAirports();
     }
 
-    private void saveAllAirports() throws IOException {
+    private void saveAllAirports() {
         List<String[]> records = new ArrayList<>();
         // Header
         records.add(new String[]{"code", "name", "city", "country"});
@@ -82,7 +97,13 @@ public class AirportManager {
                     airport.getCountry()
             });
         }
-        csvManager.writeAll(records);
+        try {
+            csvManager.writeAll(records, csvFilePath);
+        }catch (IOException e) {
+            System.err.println("An error occurred while saving airports on file CSV: " + e.getMessage());
+            System.out.println("Error details:");
+            e.printStackTrace();
+        }
     }
 
     public Airport getAirportByCode(String code) {

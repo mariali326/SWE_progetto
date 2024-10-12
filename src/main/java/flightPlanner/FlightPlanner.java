@@ -2,33 +2,30 @@ package flightPlanner;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class FlightPlanner {
-    private Map<String, Passenger> passengers;
-
     private FlightManager flightManager;
     private AirportManager airportManager;
     private RouteManager routeManager;
     private SeatManager seatManager;
     private BookingManager bookingManager;
     private PaymentManager paymentManager;
+    private PassengerManager passengerManager;
+    private TicketManager ticketManager;
 
     private FlightSearchService flightSearchService;
 
-    public FlightPlanner(String flightsCsv, String routesCsv, String seatsCsv, String bookingsCsv, String paymentsCsv) throws IOException {
+    public FlightPlanner() throws IOException {
         // Inizializza i manager
+        this.flightManager = new FlightManager();
         this.airportManager = new AirportManager();
-        this.routeManager = new RouteManager(routesCsv);
-        this.seatManager = new SeatManager(seatsCsv);
-        this.paymentManager = new PaymentManager(paymentsCsv);
-        this.bookingManager = new BookingManager(bookingsCsv, new TicketManager("csv/tickets.csv"));
-        this.flightManager = new FlightManager(flightsCsv);
-
-        this.passengers = new HashMap<>();
+        this.routeManager = new RouteManager();
+        this.seatManager = new SeatManager();
+        this.paymentManager = new PaymentManager();
+        this.passengerManager = new PassengerManager(flightManager);
+        this.ticketManager = new TicketManager();
+        this.bookingManager = new BookingManager(flightManager,ticketManager);
     }
 
     public void addFlight(Flight flight) throws IOException {
@@ -166,20 +163,16 @@ public class FlightPlanner {
         return flightSearchService;
     }
 
-    public void registerPassenger(Passenger passenger) {
-        passengers.put(passenger.getUsername(), passenger);
-        System.out.println("Passenger registered: " + passenger.getName() + " " + passenger.getSurname());
+    public void registerPassenger(Passenger passenger) throws IOException {
+        passengerManager.registerPassenger(passenger);
     }
 
-    public Passenger login(String username, String password) {
-        Passenger passenger = passengers.get(username);
-        if (passenger != null && passenger.getPassword().equals(password)) {
-            System.out.println("Login successful for: " + passenger.getName());
-            return passenger;
-        } else {
-            System.out.println("Invalid username or password.");
-            return null;
-        }
+    public List<Passenger> getPassengers() {
+        return passengerManager.getAllPassengers();
+    }
+
+    public List<Flight> getAllFlights(){
+        return flightManager.getAllFlights();
     }
 
     // Metodo per aggiornare le preferenze di notifica di un passeggero
@@ -188,5 +181,92 @@ public class FlightPlanner {
         System.out.println("Notification preferences updated for: " + passenger.getName());
     }
 
+    public void updatePassengerNotificationPreferences(String username, Set<NotificationType> types, List<NotificationChannel> channels) {
+        Passenger passenger = passengerManager.getPassengerByUsername(username);
+        if (passenger != null) {
+            passengerManager.updateNotificationPreferences(passenger, types, channels);
+            System.out.println("Notification preferences updated for passenger: " + username);
+        } else {
+            System.out.println("Passenger not found.");
+        }
+    }
+
+    public void assignSeatsForBooking(String bookingId) throws IOException {
+        Booking booking = bookingManager.getBookingById(bookingId);
+        if (booking != null) {
+            for (Ticket ticket : booking.getTickets()) {
+                Seat availableSeat = seatManager.findAvailableSeat(booking.getFlightNumber());
+                if (availableSeat != null) {
+                    seatManager.assignSeatToPassenger(availableSeat.getSeatNumber(), passengerManager.getPassengerByUsername(booking.getPassengerUsername()));
+                    System.out.println("Seat " + availableSeat.getSeatNumber() + " assigned.");
+                } else {
+                    System.out.println("No available seats.");
+                }
+            }
+        } else {
+            System.out.println("Booking not found.");
+        }
+    }
+
+    public void assignSeatToPassenger(String flightNumber, String username) throws IOException {
+        Passenger passenger = passengerManager.getPassengerByUsername(username);
+        if (passenger != null) {
+            seatManager.assignSeatToPassenger(flightNumber, passenger);
+        } else {
+            System.out.println("Passenger not found: " + username);
+        }
+    }
+
+    public void bookFlightForPassenger(String flightNumber, Passenger passenger, List<Ticket> tickets) throws IOException {
+        Passenger existingPassenger = passengerManager.getPassengerByUsername(passenger.getUsername());
+        if (existingPassenger == null) {
+            passengerManager.registerPassenger(passenger);
+            System.out.println("Passenger registered: " + passenger.getName());
+        }
+
+        Flight flight = flightManager.getFlightByNumber(flightNumber);
+        if (flight != null) {
+            // Calcolare la quantità totale da pagare in base ai biglietti
+            double totalAmount = calculateTotalAmount(tickets);
+
+            String bookingId = UUID.randomUUID().toString();
+
+            Booking booking = new Booking(bookingId, passenger.getUsername(), flightNumber, LocalDateTime.now(), tickets, totalAmount);
+            bookingManager.addBooking(booking);
+            System.out.println("Flight booked for passenger: " + passenger.getName());
+
+            for (Ticket ticket : tickets) {
+                seatManager.assignSeatToPassenger(ticket.getSeatNumber(), passenger);
+            }
+        } else {
+            System.out.println("Flight not found.");
+        }
+    }
+
+    private double calculateTotalAmount(List<Ticket> tickets) {
+        double total = 0.0;
+        for (Ticket ticket : tickets) {
+            total += ticket.getPrice();
+        }
+        return total;
+    }
+
+    public void cancelBooking(String bookingId, Passenger passenger) throws IOException {
+        Booking booking = bookingManager.getBookingById(bookingId);
+        if (booking != null) {
+            // Disiscrivere un passeggero dalle notifiche di un volo
+            passengerManager.unregisterFromFlight(passenger, booking.getFlightNumber());
+
+            // Liberare i posti
+            for (Ticket ticket : booking.getTickets()) {
+                seatManager.releaseSeat(ticket.getSeatNumber());
+            }
+
+            bookingManager.removeBooking(bookingId);
+            System.out.println("Booking canceled: " + bookingId);
+        } else {
+            System.out.println("Booking not found.");
+        }
+    }
 }
 

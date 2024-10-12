@@ -8,13 +8,15 @@ public class Payment {
     private double amount;
     private LocalDateTime paymentDate;
     private PaymentMethod method;
+    private String passengerUsername;
 
-    public Payment(String paymentId, String bookingId, double amount, LocalDateTime paymentDate, PaymentMethod method) {
+    public Payment(String paymentId, String bookingId, double amount, LocalDateTime paymentDate, PaymentMethod method, String passengerUsername) {
         this.paymentId = paymentId;
         this.bookingId = bookingId;
         this.amount = amount;
         this.paymentDate = paymentDate;
         this.method = method;
+        this.passengerUsername = passengerUsername;
     }
 
     public String getPaymentId() {
@@ -39,6 +41,10 @@ public class Payment {
 
     public void setMethod(PaymentMethod method) {
         this.method = method;
+    }
+
+    public String getPassengerUsername() {
+        return passengerUsername;
     }
 
     @Override
