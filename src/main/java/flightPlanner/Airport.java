@@ -1,10 +1,10 @@
 package flightPlanner;
 
 public class Airport {
-    private String code;// es.FLR
+    private final String code;// es.FLR
     private String name;// es. aeroporto di Firenze-Peretola
-    private String city;
-    private String country;
+    private final String city;
+    private final String country;
 
     public Airport(String code, String name, String city, String country) {
         this.code = code;
@@ -19,6 +19,10 @@ public class Airport {
 
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getCity() {

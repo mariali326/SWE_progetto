@@ -4,11 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class Booking {
-    private String bookingId;
-    private String passengerUsername;
-    private String flightNumber;
-    private LocalDateTime bookingDate;
-    private List<Ticket> tickets; // un insieme di biglietti acquistati da un passeggero per un volo specifico
+    private final String bookingId;
+    private final String passengerUsername;
+    private final String flightNumber;
+    private final LocalDateTime bookingDate;
+    private List<Ticket> tickets; // Un insieme di biglietti acquistati da un passeggero per un volo specifico
     private double totalAmount;
 
     public Booking(String bookingId, String passengerUsername, String flightNumber, LocalDateTime bookingDate, List<Ticket> tickets, double totalAmount) {
@@ -44,16 +44,26 @@ public class Booking {
         return totalAmount;
     }
 
-    public void removeTicket(String ticketId) {
-        tickets.removeIf(ticket -> ticket.getTicketNumber().equalsIgnoreCase(ticketId));
-    }
-
-    public void addTicket(Ticket ticket) {
-        tickets.add(ticket);
+    public void setTotalAmount(double totalAmount) {
+        this.totalAmount = totalAmount;
     }
 
     @Override
     public String toString() {
-        return "Booking ID: " + bookingId + ", Flight number: " + getFlightNumber() + ", Date: " + bookingDate;
+        StringBuilder sb = new StringBuilder();
+        sb.append("Booking ID: ").append(bookingId)
+                .append(", Flight number: ").append(flightNumber)
+                .append(", Date: ").append(bookingDate)
+                .append(", Total Amount: ").append(totalAmount)
+                .append(", Tickets: [");
+
+        for (int i = 0; i < tickets.size(); i++) {
+            sb.append(tickets.get(i).toString());
+            if (i < tickets.size() - 1) {
+                sb.append(", "); // Si usa la virgola per la separazione
+            }
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }

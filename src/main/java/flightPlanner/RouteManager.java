@@ -1,17 +1,24 @@
 package flightPlanner;
 
-import java.io.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class RouteManager {
+    private static final Log log = LogFactory.getLog(RouteManager.class);
     private CSVManager csvManager;
     private List<Route> routes;
     private String csvFilePath = "csv/routes.csv";
 
     public RouteManager() throws IOException {
-        // Carica il file CSV dal classpath
+        // Viene caricato il file CSV dal classpath
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(csvFilePath);
         if (inputStream == null) {
             throw new FileNotFoundException("File not found in resources: " + csvFilePath);
@@ -32,14 +39,14 @@ public class RouteManager {
                 route.getRouteId(),
                 route.getDepartureAirportCode(),
                 route.getArrivalAirportCode(),
-                String.valueOf(route.getDistance())
+                String.valueOf(route.getDistance()),
+                route.getFormattedDuration()
         };
         try {
             csvManager.appendRecord(record, csvFilePath);
         } catch (IOException e) {
-            System.out.println("Error details:");
-            e.printStackTrace();
-            throw new IOException("An error occurred while writing on a file CSV", e);
+            log.error("An error occurred while writing on a file CSV", e);
+            throw e;
         }
     }
 
@@ -55,7 +62,7 @@ public class RouteManager {
             routes.remove(toRemove);
             saveAllRoutes();
         } else {
-            System.out.println("Route " + routeId +" not found.");
+            System.out.println("Route " + routeId + " not found.");
         }
     }
 
@@ -72,26 +79,17 @@ public class RouteManager {
         return null;
     }
 
-    public List<Route> searchRoutes(String originCode, String destinationCode) {
-        List<Route> result = new ArrayList<>();
-        for (Route route : routes) {
-            if (route.getDepartureAirportCode().equalsIgnoreCase(originCode) && route.getArrivalAirportCode().equalsIgnoreCase(destinationCode)) {
-                result.add(route);
-            }
-        }
-        return result;
-    }
-
     private void loadRoutes() throws IOException {
         List<String[]> records = csvManager.readAll();
-        // Salta l'header
+        // Si salta l'header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
             Route route = new Route(
                     record[0],
                     record[1],
                     record[2],
-                    Double.parseDouble(record[3])
+                    Double.parseDouble(record[3]),
+                    Route.parseDuration(record[4])
             );
             routes.add(route);
         }
@@ -111,22 +109,31 @@ public class RouteManager {
     private void saveAllRoutes() throws IOException {
         List<String[]> records = new ArrayList<>();
         // Header
-        records.add(new String[]{"routeId", "departureAirportCode", "destinationAirportCode", "distance"});
+        records.add(new String[]{"routeId", "departureAirportCode", "destinationAirportCode", "distance", "duration"});
         // Dati
         for (Route route : routes) {
             records.add(new String[]{
                     route.getRouteId(),
                     route.getDepartureAirportCode(),
                     route.getArrivalAirportCode(),
-                    String.valueOf(route.getDistance())
+                    String.valueOf(route.getDistance()),
+                    route.getFormattedDuration()
             });
         }
         try {
             csvManager.writeAll(records, csvFilePath);
-        }catch (IOException e) {
-            System.err.println("An error occurred while saving on file CSV: " + e.getMessage());
-            System.out.println("Error details:");
-            e.printStackTrace();
+        } catch (IOException e) {
+            log.error("An error occurred while saving on file CSV: " + e.getMessage());
+            throw e;
         }
+    }
+
+    public Route getRouteByAirportsCode(String departureCode, String arrivalCode) {
+        List<Route> routes = getAllRoutes();
+        return routes.stream()
+                .filter(route -> route.getDepartureAirportCode().equalsIgnoreCase(departureCode) &&
+                        route.getArrivalAirportCode().equalsIgnoreCase(arrivalCode))
+                .findFirst()
+                .orElse(null);
     }
 }

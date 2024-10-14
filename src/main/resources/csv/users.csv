@@ -1,0 +1,9 @@
+username,password,email,role
+admin,admin123,admin@example.com,Admin
+jdoe,pass123,jdoe@example.com,Passenger
+ajohnson,pass456,ajohnson@example.com,Passenger
+mwhite,pass789,mwhite@example.com,Passenger
+richardroe,password789,richardroe@example.com,Passenger
+bbrown,pass01234,bbrown@example.com,Passenger
+jsmith,password145,smith@example.com,Passenger
+smorini,pass45678,smorini@example.com,Passenger

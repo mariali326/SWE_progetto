@@ -1,7 +1,7 @@
-ticketNumber,bookingId,seatNumber,stringNumber,price,passengerUsername
-T001,BK001,1A,F001,500,jdoe
-T002,BK002,10C,F002,1200,jsmith
-T003,BK003,12A,F003,800,ajhonson
-T004,BK004,1B,F001,950,bbrown
-T005,BK005,2A,F005,8400,smorini
-T006,BK005,11B,F005,1000,smorini
+"ticketNumber","bookingId","flightNumber","seatNumber","price","passengerName","passengerSurname"
+"T001","BK001","1A","F001","500.0","John","Doe"
+"T002","BK002","10C","F002","1200.0","Jane","Smith"
+"T003","BK003","12A","F003","800.0","Alice","Johnson"
+"T004","BK004","1B","F001","950.0","Bob","Brown"
+"T005","BK005","2A","F005","8400.0","Samanta","Morini"
+"T006","BK005","11B","F005","1000.0","Andrea","Morini"

@@ -1,16 +1,23 @@
 package flightPlanner;
 
-import java.io.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TicketManager {
+    private static final Log log = LogFactory.getLog(TicketManager.class);
     private CSVManager csvManager;
     private List<Ticket> tickets;
-    private String csvFilePath ="csv/tickets.csv";
+    private String csvFilePath = "csv/tickets.csv";
 
     public TicketManager() throws IOException {
-        // Carica il file CSV dal classpath
+        // Viene caricato il file CSV dal classpath
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(csvFilePath);
         if (inputStream == null) {
             throw new FileNotFoundException("File not found in resources: " + csvFilePath);
@@ -22,7 +29,7 @@ public class TicketManager {
 
     private void loadTickets() throws IOException {
         List<String[]> records = csvManager.readAll();
-        // Salta l'header
+        // Si salta l'header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
             Ticket ticket = new Ticket(
@@ -31,7 +38,8 @@ public class TicketManager {
                     record[2],
                     record[3],
                     Double.parseDouble(record[4]),
-                    record[5]
+                    record[5],
+                    record[6]
             );
             tickets.add(ticket);
         }
@@ -63,14 +71,14 @@ public class TicketManager {
                 ticket.getFlightNumber(),
                 ticket.getSeatNumber(),
                 String.valueOf(ticket.getPrice()),
-                ticket.getPassengerUsername()
+                ticket.getPassengerName(),
+                ticket.getPassengerSurname()
         };
         try {
-            csvManager.appendRecord(record,csvFilePath);
+            csvManager.appendRecord(record, csvFilePath);
         } catch (IOException e) {
-            System.out.println("Error details:");
-            e.printStackTrace();
-            throw new IOException("An error occurred while writing a ticket on file CSV", e);
+            log.error("An error occurred while writing a ticket on file CSV", e);
+            throw e;
         }
     }
 
@@ -86,7 +94,7 @@ public class TicketManager {
             tickets.remove(toRemove);
             saveAllTickets();
         } else {
-            System.out.println("Ticket " + ticketId +" not found.");
+            System.out.println("Ticket " + ticketId + " not found.");
         }
     }
 
@@ -104,7 +112,8 @@ public class TicketManager {
     private void saveAllTickets() throws IOException {
         List<String[]> records = new ArrayList<>();
         // Header
-        records.add(new String[]{"ticketNumber", "bookingId", "flightNumber", "seatNumber", "price", "passengerUsername"});
+        records.add(new String[]{"ticketNumber", "bookingId", "flightNumber", "seatNumber", "price", "passengerName",
+                "passengerSurname"});
         // Dati
         for (Ticket ticket : tickets) {
             records.add(new String[]{
@@ -113,15 +122,15 @@ public class TicketManager {
                     ticket.getFlightNumber(),
                     ticket.getSeatNumber(),
                     String.valueOf(ticket.getPrice()),
-                    ticket.getPassengerUsername()
+                    ticket.getPassengerName(),
+                    ticket.getPassengerSurname()
             });
         }
         try {
             csvManager.writeAll(records, csvFilePath);
-        }catch (IOException e) {
-            System.err.println("An error occurred while saving tickets on file CSV: " + e.getMessage());
-            System.out.println("Error details:");
-            e.printStackTrace();
+        } catch (IOException e) {
+            log.error("An error occurred while saving tickets on file CSV: " + e.getMessage());
+            throw e;
         }
     }
 }

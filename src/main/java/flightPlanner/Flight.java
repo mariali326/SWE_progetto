@@ -1,13 +1,13 @@
 package flightPlanner;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.time.LocalDateTime;
 
-public class Flight implements Subject{
-    private String flightNumber;
-    private String departureAirportCode;
-    private String arrivalAirportCode;
+public class Flight implements Subject {
+    private final String flightNumber;
+    private final String departureAirportCode;
+    private final String arrivalAirportCode;
     private LocalDateTime departureTime;
     private LocalDateTime arrivalTime;
     private List<Observer> observers;
@@ -20,7 +20,6 @@ public class Flight implements Subject{
         this.arrivalTime = arrivalTime;
         this.observers = new ArrayList<>();
     }
-
 
     public String getFlightNumber() {
         return flightNumber;
@@ -38,24 +37,27 @@ public class Flight implements Subject{
         return departureTime;
     }
 
+    public void setDepartureTime(LocalDateTime departureTime) {
+        this.departureTime = departureTime;
+    }
+
     public LocalDateTime getArrivalTime() {
         return arrivalTime;
+    }
+
+    public void setArrivalTime(LocalDateTime arrivalTime) {
+        this.arrivalTime = arrivalTime;
     }
 
     public List<Observer> getObservers() {
         return observers;
     }
 
-    // Aggiorna lo stato del volo e notifica gli Observers
+    // Viene aggiornato lo stato del volo e gli Observers vengono notificati
     public void updateFlightStatus(LocalDateTime newDepartureTime, LocalDateTime newArrivalTime, String updateMessage, NotificationType type) {
-        this.departureTime = newDepartureTime;
-        this.arrivalTime = newArrivalTime;
+        setDepartureTime(newDepartureTime);
+        setArrivalTime(newArrivalTime);
         notify(updateMessage, type);
-    }
-
-    @Override
-    public String toString() {
-        return flightNumber + " - " + departureAirportCode + " to " + arrivalAirportCode + " | Departure: " + departureTime + " | Arrival: " + arrivalTime;
     }
 
     @Override
@@ -75,5 +77,10 @@ public class Flight implements Subject{
     @Override
     public void unsubscribe(Observer observer) {
         observers.remove(observer);
+    }
+
+    @Override
+    public String toString() {
+        return flightNumber + " - " + departureAirportCode + " to " + arrivalAirportCode + " | Departure: " + departureTime + " | Arrival: " + arrivalTime;
     }
 }

@@ -3,7 +3,10 @@ package flightPlanner;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvException;
-import java.io.*;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.List;
 
 public class CSVManager {
@@ -34,7 +37,7 @@ public class CSVManager {
     public void writeAll(List<String[]> records, String filePath) throws IOException {
         // Usare true per abilitare la modalità append
         // Blocco try-with-resources per gestire la chiusura automatica delle risorse
-        try (FileWriter fileWriter = new FileWriter(filePath, true);
+        try (FileWriter fileWriter = new FileWriter(filePath, false);
              CSVWriter csvWriter = new CSVWriter(fileWriter, separator, quoteChar, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END)) {
             csvWriter.writeAll(records);
         }

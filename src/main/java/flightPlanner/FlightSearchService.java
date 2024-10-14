@@ -1,77 +1,53 @@
 package flightPlanner;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class FlightSearchService {
     private FlightManager flightManager;
     private AirportManager airportManager;
-    private RouteManager routeManager;
-    private SeatManager seatManager;
 
 
-    public FlightSearchService(FlightManager flightManager, AirportManager airportManager, RouteManager routeManager, SeatManager seatManager) {
+    public FlightSearchService(FlightManager flightManager, AirportManager airportManager) {
         this.flightManager = flightManager;
         this.airportManager = airportManager;
-        this.routeManager = routeManager;
-        this.seatManager = seatManager;
     }
 
-    public List<Flight> searchByDeparture(String departure) {
-        return flightManager.getAllFlights().stream()
-                .filter(f -> f.getDepartureAirportCode().equalsIgnoreCase(departure))
-                .collect(Collectors.toList());
-    }
+    // Metodo per cercare voli per partenza e destinazione(codice o città)
+    // Può capitare che l'utente inserisca il nome di una città in cui ci siano presenti più di un aeroporto
+    public List<Flight> searchFlights(String departure, String arrival, LocalDate date) {
+        List<Flight> result = new ArrayList<>();
+        List<Flight> flights = flightManager.getAllFlights();
+        List<Airport> airports = airportManager.getAllAirports();
 
-    public List<Flight> searchByArrival(String arrival) {
-        return flightManager.getAllFlights().stream()
-                .filter(f -> f.getArrivalAirportCode().equalsIgnoreCase(arrival))
-                .collect(Collectors.toList());
-    }
+        // Si trovano gli aeroporti di partenza e di arrivo
+        List<Airport> departureAirports = airports.stream()
+                .filter(a -> a.getCode().equalsIgnoreCase(departure) || a.getCity().equalsIgnoreCase(departure))
+                .toList();
 
-    // Metodo per cercare voli per partenza e destinazione
-    public List<Flight> searchFlights(String departure, String arrival) {
-        return flightManager.getAllFlights().stream()
-                .filter(flight -> flight.getDepartureAirportCode().equalsIgnoreCase(departure) &&
-                        flight.getArrivalAirportCode().equalsIgnoreCase(arrival))
-                .collect(Collectors.toList());
-    }
+        List<Airport> arrivalAirports = airports.stream()
+                .filter(a -> a.getCode().equalsIgnoreCase(arrival) || a.getCity().equalsIgnoreCase(arrival))
+                .toList();
 
+        for (Flight flight : flights) {
+            // Si verifica se il volo parte da uno degli aeroporti di partenza
+            boolean matchesDeparture = departureAirports.stream()
+                    .anyMatch(a -> a.getCode().equalsIgnoreCase(flight.getDepartureAirportCode()));
 
-    public List<Flight> searchByDate(LocalDateTime date) {
-        return flightManager.getAllFlights().stream()
-                .filter(f -> f.getDepartureTime().equals(date))
-                .collect(Collectors.toList());
-    }
+            // Si verifica se il volo arriva in uno degli aeroporti di arrivo
+            boolean matchesArrival = arrivalAirports.stream()
+                    .anyMatch(a -> a.getCode().equalsIgnoreCase(flight.getArrivalAirportCode()));
 
-    public List<Flight> searchByRoute(String departure, String arrival) {
-        return flightManager.getAllFlights().stream()
-                .filter(f -> f.getDepartureAirportCode().equalsIgnoreCase(departure) && f.getArrivalAirportCode().equalsIgnoreCase(arrival))
-                .collect(Collectors.toList());
-    }
-
-    // Cercare voli per aeroporto di partenza e di arrivo
-    public List<Flight> searchFlightsByAirports(String departureCode, String arrivalCode) {
-        String departure = airportManager.getAirportByCode(departureCode).getName();
-        String arrival = airportManager.getAirportByCode(arrivalCode).getName();
-
-        return searchFlights(departure, arrival);
-    }
-
-    public List<Flight> searchFlightsByRoute(String routeId) {
-        Route route = routeManager.getRouteById(routeId);
-        if (route != null) {
-            return searchFlights(route.getDepartureAirportCode(), route.getArrivalAirportCode());
+            // Se entrambi corrispondono, viene controllato la data
+            if (matchesDeparture && matchesArrival) {
+                LocalDate flightDate = flight.getDepartureTime().toLocalDate();
+                if (flightDate.equals(date)) {
+                    result.add(flight);
+                }
+            }
         }
-        return List.of(); // Nessun volo trovato
-    }
 
-    // Filtrare i voli in base alla disponibilità di posti
-    public List<Flight> searchAvailableFlights(String departure, String arrival) {
-        List<Flight> flights = searchFlights(departure, arrival);
-        return flights.stream()
-                .filter(flight -> seatManager.hasAvailableSeats(flight))
-                .collect(Collectors.toList());
+        return result;
     }
 }

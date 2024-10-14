@@ -1,37 +1,35 @@
 package flightPlanner;
 
-import java.io.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class BookingManager {
+    private static final Log log = LogFactory.getLog(BookingManager.class);
     private CSVManager csvManager;
     private List<Booking> bookings;
     private FlightManager flightManager;
+    private PassengerManager passengerManager;
     private String csvFilePath = "csv/bookings.csv";
 
-    public BookingManager(FlightManager flightManager,TicketManager ticketManager) throws IOException {
-        // Carica il file CSV dal classpath
+    public BookingManager(FlightManager flightManager, PassengerManager passengerManager, TicketManager ticketManager) throws IOException {
+        // Viene caricato il file CSV dal classpath
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(csvFilePath);
         if (inputStream == null) {
             throw new FileNotFoundException("File not found in resources: " + csvFilePath);
         }
 
         this.flightManager = flightManager;
+        this.passengerManager = passengerManager;
         this.csvManager = new CSVManager(new InputStreamReader(inputStream));
-        this.bookings = new ArrayList<>();
-        loadBookings(ticketManager);
-    }
-
-    public void bookFlight(String stringId, Passenger passenger) {
-        Flight flight = flightManager.getFlightByNumber(stringId);
-        if (flight != null) {
-            flight.subscribe(passenger);  // Aggiungere il passeggero come osservatore del volo
-            System.out.println("Passenger " + passenger.getName() + " booked flight " + flight.getFlightNumber());
-        } else {
-            System.out.println("Flight not found.");
-        }
+        this.bookings = loadBookings(ticketManager);
     }
 
     public void addBooking(Booking booking) throws IOException {
@@ -46,18 +44,20 @@ public class BookingManager {
         String[] record = {
                 booking.getBookingId(),
                 booking.getPassengerUsername(),
+                booking.getFlightNumber(),
+                booking.getBookingDate().toString(),
                 ticketIdsConcatenated,
                 String.valueOf(booking.getTotalAmount())
         };
         try {
             csvManager.appendRecord(record, csvFilePath);
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new IOException("An error occurred while writing a booking on file CSV", e);
+            log.error("An error occurred while writing a booking on file CSV", e);
+            throw e;
         }
     }
 
-    public void removeBooking(String bookingId) {
+    public void removeBooking(String bookingId) throws IOException {
         Booking toRemove = null;
         for (Booking booking : bookings) {
             if (booking.getBookingId().equalsIgnoreCase(bookingId)) {
@@ -69,26 +69,14 @@ public class BookingManager {
             bookings.remove(toRemove);
             saveAllBookings();
         } else {
-        System.out.println("Booking " + bookingId +" not found.");
+            System.out.println("Booking " + bookingId + " not found.");
         }
     }
 
-    public Booking getBookingById(String bookingId) {
-        for (Booking booking : bookings) {
-            if (booking.getBookingId().equalsIgnoreCase(bookingId)) {
-                return booking;
-            }
-        }
-        return null;
-    }
-
-    public List<Booking> getAllBookings() {
-        return bookings;
-    }
-
-    private void loadBookings(TicketManager ticketManager) throws IOException {
+    private List<Booking> loadBookings(TicketManager ticketManager) throws IOException {
         List<String[]> records = csvManager.readAll();
-        // Salta l'header
+        List<Booking> bookings = new ArrayList<>();
+        // Si salta l'header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
             String bookingId = record[0];
@@ -105,7 +93,34 @@ public class BookingManager {
                     tickets.add(ticket);
                 }
             }
+
+            Passenger passenger = passengerManager.getPassengerByUsername(passengerUsername);
+            Flight flight = flightManager.getFlightByNumber(flightNumber);
+            passenger.registerForFlight(flight);
+            tickets.stream().skip(1).forEach(ticket -> {
+                String name = ticket.getPassengerName();
+                String surname = ticket.getPassengerSurname();
+
+                Passenger additionalPassenger = passengerManager.getPassengerByFullName(name, surname);
+
+                if (additionalPassenger != null) {
+                    additionalPassenger.registerForFlight(flight);
+                } else {
+                    System.out.println("Passenger not found: " + name + " " + surname);
+                }
+            });
+
+            Booking booking = new Booking(
+                    bookingId,
+                    passengerUsername,
+                    flightNumber,
+                    bookingDate,
+                    tickets,
+                    totalAmount
+            );
+            bookings.add(booking);
         }
+        return bookings;
     }
 
     public void updateBooking(Booking updatedBooking) throws IOException {
@@ -119,7 +134,7 @@ public class BookingManager {
         saveAllBookings();
     }
 
-    private void saveAllBookings() {
+    private void saveAllBookings() throws IOException {
         List<String[]> records = new ArrayList<>();
         // Header
         records.add(new String[]{"bookingId", "passengerUsername", "flightNumber", "bookingDate", "ticketIds", "totalAmount"});
@@ -138,10 +153,32 @@ public class BookingManager {
         }
         try {
             csvManager.writeAll(records, csvFilePath);
-        }catch (IOException e) {
-            System.err.println("An error occurred while saving bookings on file CSV: " + e.getMessage());
-            System.out.println("Error details:");
-            e.printStackTrace();
+        } catch (IOException e) {
+            log.error("An error occurred while saving bookings on file CSV: " + e.getMessage());
+            throw e;
         }
+    }
+
+    public List<Booking> getBookingsForPassenger(String username) {
+        List<Booking> passengerBookings = new ArrayList<>();
+        for (Booking booking : bookings) {
+            if (booking.getPassengerUsername().equals(username)) {
+                passengerBookings.add(booking);
+            }
+        }
+        return passengerBookings;
+    }
+
+    public Booking getBookingById(String bookingId) {
+        for (Booking booking : bookings) {
+            if (booking.getBookingId().equalsIgnoreCase(bookingId)) {
+                return booking;
+            }
+        }
+        return null;
+    }
+
+    public List<Booking> getAllBookings() {
+        return bookings;
     }
 }

@@ -1,17 +1,24 @@
 package flightPlanner;
 
-import java.io.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PaymentManager {
+    private static final Log log = LogFactory.getLog(PaymentManager.class);
     private CSVManager csvManager;
     private List<Payment> payments;
-    private String csvFilePath ="csv/payments.csv";
+    private String csvFilePath = "csv/payments.csv";
 
     public PaymentManager() throws IOException {
-        // Carica il file CSV dal classpath
+        // Viene caricato il file CSV dal classpath
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(csvFilePath);
         if (inputStream == null) {
             throw new FileNotFoundException("File not found in resources: " + csvFilePath);
@@ -23,7 +30,7 @@ public class PaymentManager {
 
     private void loadPayments() throws IOException {
         List<String[]> records = csvManager.readAll();
-        // Salta l'header
+        // Si salta l'header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
             Payment payment = new Payment(
@@ -48,17 +55,16 @@ public class PaymentManager {
         String[] record = {
                 payment.getPaymentId(),
                 payment.getBookingId(),
-                String.valueOf(payment.getAmount()),
+                String.valueOf(payment.getAmountPayed()),
                 payment.getPaymentDate().toString(),
                 payment.getPaymentMethod().name(),  // Converte l'enum in stringa
                 payment.getPassengerUsername()
         };
         try {
-            csvManager.appendRecord(record,csvFilePath);
-        }catch (IOException e) {
-            System.out.println("Error details:");
-            e.printStackTrace();
-            throw new IOException("An error occurred while writing a payment on file CSV", e);
+            csvManager.appendRecord(record, csvFilePath);
+        } catch (IOException e) {
+            log.error("An error occurred while writing a payment on file CSV", e);
+            throw e;
         }
     }
 
@@ -96,7 +102,7 @@ public class PaymentManager {
             records.add(new String[]{
                     payment.getPaymentId(),
                     payment.getBookingId(),
-                    String.valueOf(payment.getAmount()),
+                    String.valueOf(payment.getAmountPayed()),
                     payment.getPaymentDate().toString(),
                     payment.getPaymentMethod().name(),  // Converte l'enum in stringa
                     payment.getPassengerUsername()
@@ -104,11 +110,10 @@ public class PaymentManager {
             });
         }
         try {
-            csvManager.writeAll(records,csvFilePath);
-        }catch (IOException e) {
-            System.err.println("An error occurred while saving payments on file CSV: " + e.getMessage());
-            System.out.println("Error details:");
-            e.printStackTrace();
+            csvManager.writeAll(records, csvFilePath);
+        } catch (IOException e) {
+            log.error("An error occurred while saving payments on file CSV: " + e.getMessage());
+            throw e;
         }
     }
 
