@@ -151,6 +151,7 @@ public class AuthManager {
 
     public void saveUsersToCSV() throws IOException {
         List<String[]> records = new ArrayList<>();
+        records.add(new String[]{"username", "password", "email", "role"});
         for (String username : users.keySet()) {
             records.add(new String[]{
                     username,

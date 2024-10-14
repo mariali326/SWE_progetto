@@ -3,7 +3,10 @@ package flightPlanner;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class FlightPlanner {
     private FlightManager flightManager;
@@ -170,18 +173,21 @@ public class FlightPlanner {
 
     public void cancelBooking(String bookingId, Passenger passenger) throws IOException {
         Booking booking = bookingManager.getBookingById(bookingId);
+        double refundAmount = 0.0;
         if (booking != null) {
             // Disiscrivere un passeggero dalle notifiche di un volo
             passengerManager.unregisterFromFlight(passenger, booking.getFlightNumber());
 
             // Liberare i posti
             for (Ticket ticket : booking.getTickets()) {
-                seatManager.releaseSeat(ticket.getSeatNumber());
+                refundAmount += ticket.getPrice() * 0.40;
+                seatManager.releaseSeat(ticket.getSeatNumber(), ticket.getFlightNumber());
                 ticketManager.removeTicket(ticket.getTicketNumber());
             }
 
             bookingManager.removeBooking(bookingId);
             System.out.println("Booking canceled: " + bookingId);
+            System.out.println("Refund of 40% (" + refundAmount + " EUR) for booking " + bookingId + " has been processed.");
         } else {
             System.out.println("Booking not found.");
         }
@@ -189,6 +195,10 @@ public class FlightPlanner {
 
     public List<Booking> getBookingsForPassenger(String username) {
         return bookingManager.getBookingsForPassenger(username);
+    }
+
+    public Booking getBookingById(String bookingId) {
+        return bookingManager.getBookingById(bookingId);
     }
 
     public void addRoute(Route route) throws IOException {
@@ -220,7 +230,7 @@ public class FlightPlanner {
     public void releaseSeat(String flightNumber, String seatId) throws IOException {
         Flight flight = flightManager.getFlightByNumber(flightNumber);
         if (flight != null) {
-            seatManager.releaseSeat(seatId);
+            seatManager.releaseSeat(seatId, flightNumber);
             System.out.println("Seat released from flight: " + flightNumber);
         } else {
             System.out.println("Flight " + flightNumber + " not found.");
@@ -252,7 +262,7 @@ public class FlightPlanner {
 
     public void removeSeatFromFlight(String flightNumber, String seatNumber) throws IOException {
         Flight flight = flightManager.getFlightByNumber(flightNumber);
-        Seat seat = seatManager.getSeatByNumber(seatNumber);
+        Seat seat = seatManager.getSeatByNumber(seatNumber, flightNumber);
         if (flight != null) {
             if (seat != null) {
                 seatManager.removeSeats(seat);
@@ -293,12 +303,17 @@ public class FlightPlanner {
         List<Ticket> tickets = booking.getTickets();
         String passengerName = ticket.getPassengerName();
         String passengerSurname = ticket.getPassengerSurname();
+        double ticketPrice = ticket.getPrice();
         boolean removed = tickets.remove(ticket);  // Viene rimosso il biglietto dalla lista
 
         if (!removed) {
             throw new IllegalArgumentException("Ticket " + ticket.getTicketNumber() + " not found in booking " + bookingId);
         } else {
-            seatManager.releaseSeat(ticket.getSeatNumber());
+            booking.setTotalAmount(booking.getTotalAmount() - ticketPrice);
+            System.out.println("Refund of 40% (" + ticketPrice * 0.40 + " EUR) for ticket " + ticket.getTicketNumber() +
+                    " from booking " + bookingId + " has been processed.");
+
+            seatManager.releaseSeat(ticket.getSeatNumber(), ticket.getFlightNumber());
             ticketManager.removeTicket(ticket.getTicketNumber());
             Flight flight = flightManager.getFlightByNumber(booking.getFlightNumber());
             if (flight != null) {

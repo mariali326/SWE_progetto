@@ -2,8 +2,8 @@ package flightPlanner;
 
 public class Seat {
     private final String seatNumber; // es.13A
-    private String classType; // es. "Economy", "Business", "First"
     private final String flightNumber;
+    private String classType; // es. "Economy", "Business", "First"
     private boolean isAvailable;
 
     public Seat(String seatNumber, String classType, String flightNumber, boolean isAvailable) {
@@ -39,5 +39,10 @@ public class Seat {
 
     public void releaseSeat() {
         this.isAvailable = true;
+    }
+
+    @Override
+    public String toString() {
+        return "The seat " + seatNumber + " - " + classType + " on the flight " + flightNumber + " is available: " + isAvailable;
     }
 }

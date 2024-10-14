@@ -2,9 +2,9 @@ package flightPlanner;
 
 public class Airport {
     private final String code;// es.FLR
-    private String name;// es. aeroporto di Firenze-Peretola
     private final String city;
     private final String country;
+    private String name;// es. aeroporto di Firenze-Peretola
 
     public Airport(String code, String name, String city, String country) {
         this.code = code;

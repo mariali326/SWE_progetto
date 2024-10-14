@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.Set;
 
 public class Passenger extends User implements Observer {
+    private final String role;
     private String name;
     private String surname;
     private String phoneNumber; // Facoltativo
     private List<Flight> registeredFlights;
     private NotificationPreferences preferences;
-    private final String role;
     private PaymentMethod paymentMethod;
 
     public Passenger(String username, String name, String surname, String email, String phoneNumber, String password,

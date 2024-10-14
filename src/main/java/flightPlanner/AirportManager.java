@@ -61,7 +61,7 @@ public class AirportManager {
             csvManager.appendRecord(record, csvFilePath);
         } catch (IOException e) {
             log.error("An error occurred while writing an airport on file CSV", e);
-            throw  e;
+            throw e;
         }
     }
 

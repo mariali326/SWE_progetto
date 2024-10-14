@@ -2,8 +2,10 @@ package flightPlanner;
 //da sistemare
 
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -18,7 +20,11 @@ import java.util.*;
 public class FlightPlannerApp extends Application {
     private FlightPlanner flightPlanner;
     private AuthManager authManager;
-    private Stage primaryStage;
+    private Stage primaryStage; // Finestra principale che contiene scene e tuttò che è visibile nell'interfaccia utente
+
+    public static void main(String[] args) {
+        launch(args);
+    }
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -30,7 +36,7 @@ public class FlightPlannerApp extends Application {
     }
 
     private void showLoginScreen() {
-        VBox vbox = new VBox(10);
+        VBox vbox = new VBox(10);// Layout verticale con spaziatura di 10 pixel tra gli elementi
         Label titleLabel = new Label("Login");
 
         TextField usernameField = new TextField();
@@ -62,9 +68,20 @@ public class FlightPlannerApp extends Application {
             String email = emailField.getText();
 
             if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
-                showAlert(Alert.AlertType.ERROR, "Missing Input", "Please fill in all the fields!");
+                showAlert(Alert.AlertType.ERROR, "Input Error", "Please fill in all the fields!");
                 return; // Si esce dalla funzione se i campi non sono completi
             }
+
+            if (!email.matches("^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$")) {
+                showAlert(Alert.AlertType.ERROR, "Invalid Email", "Please provide a valid email address.");
+                return;
+            }
+
+            if (password.length() < 6) {
+                showAlert(Alert.AlertType.ERROR, "Invalid Password", "Password must be at least 6 characters long.");
+                return;
+            }
+
             try {
                 if (authManager.register(username, password, email, "Passenger")) {
                     authManager.getUsers().put(username, password);
@@ -86,7 +103,7 @@ public class FlightPlannerApp extends Application {
         });
 
         vbox.getChildren().addAll(titleLabel, usernameField, passwordField, emailField, loginButton, registerButton);
-        Scene scene = new Scene(vbox, 300, 250);
+        Scene scene = new Scene(vbox, 300, 250);// Contenuto visibile della finestra che contiene i nodi disposti in un layout (lxh)
         primaryStage.setScene(scene);
         primaryStage.setTitle("Flight Planner - Login");
         primaryStage.show();
@@ -122,6 +139,7 @@ public class FlightPlannerApp extends Application {
 
     private void showUserInterface(VBox vbox) {
         Label userLabel = new Label("Passenger Label");
+        Label welcomeLabel = new Label("Welcome " + authManager.getLoggedInUser() + " !");
 
         Button viewBookingsButton = new Button("View Bookings");
         viewBookingsButton.setOnAction(_ -> showViewBookings());
@@ -141,6 +159,9 @@ public class FlightPlannerApp extends Application {
         Button cancelTicketBtn = new Button("Cancel ticket");
         cancelTicketBtn.setOnAction(_ -> showCancelTicket());
 
+        Button searchFlightsButton = new Button("Search Flights");
+        searchFlightsButton.setOnAction(_ -> showSearchFlights());
+
         Button manageNotificationsButton = new Button("Manage Notifications");
         manageNotificationsButton.setOnAction(_ -> {
             try {
@@ -153,9 +174,8 @@ public class FlightPlannerApp extends Application {
         Button paymentMethodButton = new Button("Payment Methods");
         paymentMethodButton.setOnAction(_ -> showPaymentMethod());
 
-        Button searchFlightsButton = new Button("Search Flights");
-        searchFlightsButton.setOnAction(_ -> showSearchFlights());
-
+        Button updateUserCredentialsBtn = new Button("Update my credentials");
+        updateUserCredentialsBtn.setOnAction(_ -> showUpdateCredentials());
 
         Button unsubscribeButton = new Button("Unsubscribe");
         unsubscribeButton.setOnAction(_ -> {
@@ -185,8 +205,126 @@ public class FlightPlannerApp extends Application {
             }
         });
 
-        vbox.getChildren().addAll(userLabel, viewBookingsButton, bookFlightButton, cancelBookingButton, cancelTicketBtn,
-                manageNotificationsButton, paymentMethodButton, searchFlightsButton, unsubscribeButton);
+        vbox.getChildren().addAll(userLabel, welcomeLabel, viewBookingsButton, bookFlightButton, cancelBookingButton,
+                cancelTicketBtn, searchFlightsButton, manageNotificationsButton, paymentMethodButton, updateUserCredentialsBtn, unsubscribeButton);
+    }
+
+    private void showUpdateCredentials() {
+        GridPane grid = new GridPane();// Griglia
+        grid.setPadding(new Insets(10, 10, 10, 10));// Definire i margini attorno al contenuto di grid(valori visti in modo orario)
+        grid.setVgap(8);// Spazio verticale tra le righe
+        grid.setHgap(10);// Spazio orizzontale tra le colonne
+
+        Passenger loginUser = flightPlanner.getPassenger(authManager.getLoggedInUser());
+
+        Label emailLabel = new Label("New Email:");
+        GridPane.setConstraints(emailLabel, 0, 0);// Serve per posizionare in una determinata cella cxr
+        TextField emailInput = new TextField(loginUser.getEmail());
+        emailInput.setPromptText("Enter new email");
+        emailInput.setText(authManager.getLoggedInUserEmail());// Se l'utente inizia a digitare, appare il testo di prompt
+        GridPane.setConstraints(emailInput, 1, 0);
+
+        Label oldPasswordLabel = new Label("Old Password:");
+        GridPane.setConstraints(oldPasswordLabel, 0, 1);
+        PasswordField oldPasswordInput = new PasswordField();
+        oldPasswordInput.setPromptText("Enter your old password");
+        GridPane.setConstraints(oldPasswordInput, 1, 1);
+
+        Label newPasswordLabel = new Label("New Password:");
+        GridPane.setConstraints(newPasswordLabel, 0, 2);
+        PasswordField newPasswordInput = new PasswordField();
+        newPasswordInput.setPromptText("Enter new password");
+        GridPane.setConstraints(newPasswordInput, 1, 2);
+
+        Label confirmPasswordLabel = new Label("Confirm Password:");
+        GridPane.setConstraints(confirmPasswordLabel, 0, 3);
+        PasswordField confirmPasswordInput = new PasswordField();
+        confirmPasswordInput.setPromptText("Re-enter new password");
+        GridPane.setConstraints(confirmPasswordInput, 1, 3);
+
+
+        emailInput.setPrefWidth(300); // Aumenta la larghezza del campo
+        newPasswordInput.setPrefWidth(300);
+
+        Button updateButton = new Button("Update");
+        GridPane.setConstraints(updateButton, 0, 4);
+
+        updateButton.setOnAction(_ -> {
+            String newEmail = emailInput.getText();
+            String oldPassword = oldPasswordInput.getText();
+            String newPassword = newPasswordInput.getText();
+            String confirmPassword = confirmPasswordInput.getText();
+
+            if (newEmail.isEmpty() && oldPassword.isEmpty() && newPassword.isEmpty() && confirmPassword.isEmpty()) {
+                showAlert(Alert.AlertType.ERROR, "Input Error", "Please provide at least a new email or a new password.");
+                return;
+            }
+
+            if (newEmail.isEmpty()) {
+                newEmail = authManager.getLoggedInUserEmail();
+            }
+
+            if (!newEmail.matches("^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$")) {
+                showAlert(Alert.AlertType.ERROR, "Invalid Email", "Please provide a valid email address.");
+                return;
+            }
+
+            if (newPassword.isEmpty() && confirmPassword.isEmpty()) {
+                newPassword = authManager.getLoggedInUserPassword();
+                ;
+                confirmPassword = newPassword;
+            }
+
+            if (!oldPassword.equals(authManager.getLoggedInUserPassword())) {
+                showAlert(Alert.AlertType.ERROR, "Input Error",
+                        "Old password is incorrect. Provide the correct password to update your credentials");
+                return;
+            }
+
+            if (!newPassword.equals(confirmPassword)) {
+                showAlert(Alert.AlertType.ERROR, "Password Mismatch", "New passwords do not match.");
+                return;
+            }
+
+            if (newPassword.length() < 6) {
+                showAlert(Alert.AlertType.ERROR, "Invalid Password", "Password must be at least 6 characters long.");
+                return;
+            }
+
+            updateButton.setDisable(true);
+            try {
+                boolean success = authManager.updateUser(authManager.getLoggedInUser(), newPassword, newEmail);
+                if (success) {
+                    loginUser.setEmail(newEmail);
+                    loginUser.setPassword(newPassword);
+
+                    flightPlanner.updatePassenger(loginUser);
+                    System.out.println("Credentials updated: " + authManager.getLoggedInUser() + " " + authManager.getLoggedInUserEmail()
+                            + " " + authManager.getLoggedInUserPassword());
+                    showAlert(Alert.AlertType.INFORMATION, "Success", "Credentials updated successfully!");
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Failure", "Failed to update your credentials.");
+                }
+            } catch (Exception ex) {
+                System.out.println("Failed updating credentials for " + authManager.getLoggedInUser() +
+                        " , actual password: " + authManager.getLoggedInUserPassword() + "| new password: "
+                        + newPassword + ", actual email: " + authManager.getLoggedInUserEmail() + "| new email: " + newEmail);
+                showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while updating your credentials.");
+            } finally {
+                updateButton.setDisable(false);
+            }
+        });
+
+        Button backButton = new Button("Back");
+        GridPane.setConstraints(backButton, 1, 4);
+        backButton.setOnAction(_ -> showMainAppScreen());
+
+        grid.getChildren().addAll(emailLabel, emailInput, oldPasswordLabel, oldPasswordInput, newPasswordLabel, newPasswordInput, confirmPasswordLabel, confirmPasswordInput, backButton, updateButton);
+
+        Scene scene = new Scene(grid, 450, 200);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Update Credentials");
+        primaryStage.show();
     }
 
     private boolean showConfirmationDialog() {
@@ -231,9 +369,21 @@ public class FlightPlannerApp extends Application {
             return;
         }
 
+        double refundAmount = ticket.getPrice() * 0.40;
+
         try {
             flightPlanner.cancelTicket(bookingId, ticket);
-            showAlert(Alert.AlertType.INFORMATION, "Success", "You cancelled the ticket " + ticketNumber + " from the booking " + bookingId);
+            Alert successesAlert = new Alert(Alert.AlertType.INFORMATION);
+            successesAlert.setTitle("Success");
+            successesAlert.setHeaderText(null);
+            successesAlert.setContentText("You cancelled the ticket " + ticketNumber + " in booking " + bookingId);
+            successesAlert.showAndWait();
+
+            Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);// Aspetta che il precedente alert venga chiuso
+            infoAlert.setTitle("Important Information");
+            infoAlert.setHeaderText("Don't worry for your refund!");
+            infoAlert.setContentText("Refund of 40% (" + refundAmount + "EUR) for ticket " + ticketNumber + " has been proceed automatically.");
+            infoAlert.showAndWait();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -253,9 +403,24 @@ public class FlightPlannerApp extends Application {
         }
 
         Passenger passenger = flightPlanner.getPassenger(authManager.getLoggedInUser());
+
+        Booking booking = flightPlanner.getBookingById(bookingId);
+        double refundAmount = booking.getTotalAmount() * 0.40;
+
         try {
             flightPlanner.cancelBooking(bookingId, passenger);
-            showAlert(Alert.AlertType.INFORMATION, "Success", "You cancelled the booking " + bookingId);
+            //showAlert(Alert.AlertType.INFORMATION, "Success", "You cancelled the booking " + bookingId);
+            Alert successesAlert = new Alert(Alert.AlertType.INFORMATION);
+            successesAlert.setTitle("Success");
+            successesAlert.setHeaderText(null);
+            successesAlert.setContentText("You cancelled the booking " + bookingId);
+            successesAlert.showAndWait();
+
+            Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);
+            infoAlert.setTitle("Important Information");
+            infoAlert.setHeaderText("Don't worry for your refund!");
+            infoAlert.setContentText("Refund of 40% (" + refundAmount + "EUR) for booking " + bookingId + " has been proceed automatically.");
+            infoAlert.showAndWait();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -272,7 +437,7 @@ public class FlightPlannerApp extends Application {
             showAlert(Alert.AlertType.ERROR, "Error", "Flight number is required.");
             return;
         } else if (!flightPlanner.checkFlightExistence(flightNumber)) {
-            showAlert(Alert.AlertType.ERROR, "Error", "Flight number " + flightNumber +" not found !");
+            showAlert(Alert.AlertType.ERROR, "Error", "Flight number " + flightNumber + " not found !");
             return;
         }
 
@@ -283,8 +448,8 @@ public class FlightPlannerApp extends Application {
             return;
         }
 
-        if(mainPassenger.isRegisteredForFlight(flightPlanner.findFlight(flightNumber))){
-            showAlert(Alert.AlertType.ERROR,"Duplicate Booking","You have already a booking for flight " + flightNumber);
+        if (mainPassenger.isRegisteredForFlight(flightPlanner.findFlight(flightNumber))) {
+            showAlert(Alert.AlertType.ERROR, "Duplicate Booking", "You have already a booking for flight " + flightNumber);
             return;
         }
 
@@ -467,7 +632,7 @@ public class FlightPlannerApp extends Application {
                     showMainAppScreen();
                     showAlert(Alert.AlertType.INFORMATION, "Success", "Payment successful with " + mainPassenger.getPaymentMethod() + "!");
 
-                    });
+                });
             } else {
                 showAlert(Alert.AlertType.ERROR, "Error", "You need to select a payment method to proceed.");
                 return;
@@ -531,7 +696,7 @@ public class FlightPlannerApp extends Application {
                 return;
             }
         } else {
-            showAlert(Alert.AlertType.ERROR,"Input Error","Please enter a date.");
+            showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter a date.");
             return;
         }
 
@@ -653,10 +818,10 @@ public class FlightPlannerApp extends Application {
                     throw new RuntimeException(e);
                 }
 
-                showAlert(Alert.AlertType.INFORMATION,"Success","Payment method updated to: " + selectedPaymentMethod);
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Payment method updated to: " + selectedPaymentMethod);
             } else {
                 // Alert se non è stato selezionato alcun metodo di pagamento
-                showAlert(Alert.AlertType.WARNING,"Warning","Please select a payment method.");
+                showAlert(Alert.AlertType.WARNING, "Warning", "Please select a payment method.");
             }
         });
 
@@ -1046,11 +1211,11 @@ public class FlightPlannerApp extends Application {
             String classType = classTypeField.getText();
             double price;
 
-            if(flightNumber.isEmpty() || classType.isEmpty()){
-                showAlert(Alert.AlertType.ERROR,"Input Error", "Please enter all the fields.");
+            if (flightNumber.isEmpty() || classType.isEmpty()) {
+                showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter all the fields.");
                 return;
             } else if (!flightPlanner.checkFlightExistence(flightNumber)) {
-                showAlert(Alert.AlertType.ERROR,"Error","Flight number " + flightNumber + " not found!");
+                showAlert(Alert.AlertType.ERROR, "Error", "Flight number " + flightNumber + " not found!");
                 return;
             }
 
@@ -1242,8 +1407,8 @@ public class FlightPlannerApp extends Application {
                 return;
             }
 
-            if(!flightPlanner.checkFlightExistence(flightNumber)){
-                showAlert(Alert.AlertType.ERROR,"Input Error","Flight " + flightNumber + " not found");
+            if (!flightPlanner.checkFlightExistence(flightNumber)) {
+                showAlert(Alert.AlertType.ERROR, "Input Error", "Flight " + flightNumber + " not found");
                 return;
             }
 
@@ -1483,9 +1648,5 @@ public class FlightPlannerApp extends Application {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
-    }
-
-    public static void main(String[] args) {
-        launch(args);
     }
 }

@@ -49,9 +49,10 @@ public class SeatManager {
         return seats;
     }
 
-    public Seat getSeatByNumber(String seatNumber) {
+    public Seat getSeatByNumber(String seatNumber, String flightNumber) {
         return seats.stream()
-                .filter(seat -> seat.getSeatNumber().equalsIgnoreCase(seatNumber))
+                .filter(seat -> seat.getSeatNumber().equalsIgnoreCase(seatNumber) &&
+                        seat.getFlightNumber().equalsIgnoreCase(flightNumber))
                 .findFirst()
                 .orElse(null);
     }
@@ -105,8 +106,8 @@ public class SeatManager {
     }
 
     // Metodo per aggiornare la disponibilità di un posto
-    public void updateSeatAvailability(String seatNumber, boolean isAvailable) throws IOException {
-        Seat seat = getSeatByNumber(seatNumber);
+    public void updateSeatAvailability(String seatNumber, String flightNumber, boolean isAvailable) throws IOException {
+        Seat seat = getSeatByNumber(seatNumber, flightNumber);
         if (seat != null) {
             seat.setAvailable(isAvailable);
             saveAllSeats();
@@ -125,7 +126,7 @@ public class SeatManager {
                 saveAllSeats();
                 System.out.println("Seat " + seatNumber + " successfully booked.");
                 seatFound = true; // Prenotazione completata con successo
-                updateSeatAvailability(seatNumber, false);
+                updateSeatAvailability(seatNumber, flightNumber, false);
                 break;
             }
         }
@@ -135,11 +136,12 @@ public class SeatManager {
     }
 
     // Metodo per rilasciare un posto (cancellare la prenotazione)
-    public void releaseSeat(String seatNumber) throws IOException {
-        Seat seat = getSeatByNumber(seatNumber);
+    public void releaseSeat(String seatNumber, String flightNumber) throws IOException {
+        Seat seat = getSeatByNumber(seatNumber, flightNumber);
         if (seat != null && !seat.isAvailable()) {
             seat.releaseSeat();
-            saveAllSeats(); // Salva lo stato aggiornato
+            saveAllSeats();
+            updateSeatAvailability(seatNumber, flightNumber, true);
             System.out.println("Seat " + seatNumber + " successfully released and it's now available.");
         } else {
             System.out.println("Seat " + seatNumber + " is already available or doesn't exist.");
