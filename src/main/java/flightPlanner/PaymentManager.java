@@ -84,15 +84,6 @@ public class PaymentManager {
         }
     }
 
-    public Payment getPaymentById(String paymentId) {
-        for (Payment payment : payments) {
-            if (payment.getPaymentId().equals(paymentId)) {
-                return payment;
-            }
-        }
-        return null;
-    }
-
     private void saveAllPayments() throws IOException {
         List<String[]> records = new ArrayList<>();
         // Header
@@ -130,5 +121,14 @@ public class PaymentManager {
 
     public List<Payment> getAllPayments() {
         return payments;
+    }
+
+    public Payment getPaymentById(String paymentId) {
+        for (Payment payment : payments) {
+            if (payment.getPaymentId().equals(paymentId)) {
+                return payment;
+            }
+        }
+        return null;
     }
 }

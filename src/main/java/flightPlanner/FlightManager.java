@@ -46,19 +46,6 @@ public class FlightManager {
         return flights;
     }
 
-    public List<Flight> getAllFlights() {
-        return flights;
-    }
-
-    public Flight getFlightByNumber(String flightNumber) {
-        for (Flight flight : flights) {
-            if (flight.getFlightNumber().equalsIgnoreCase(flightNumber)) {
-                return flight;
-            }
-        }
-        return null;
-    }
-
     public void addFlight(Flight flight) throws IOException {
         Flight existingFlight = getFlightByNumber(flight.getFlightNumber());
         if (existingFlight != null) {
@@ -128,5 +115,18 @@ public class FlightManager {
             log.error("An error occurred while saving flights on file CSV: " + e.getMessage());
             throw e;
         }
+    }
+
+    public List<Flight> getAllFlights() {
+        return flights;
+    }
+
+    public Flight getFlightByNumber(String flightNumber) {
+        for (Flight flight : flights) {
+            if (flight.getFlightNumber().equalsIgnoreCase(flightNumber)) {
+                return flight;
+            }
+        }
+        return null;
     }
 }

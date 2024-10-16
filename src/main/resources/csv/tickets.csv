@@ -1,7 +1,7 @@
-ticketNumber,bookingId,seatNumber,stringNumber,price,passengerName,passengerSurname
-T001,BK001,1A,F001,500,John,Doe
-T002,BK002,10C,F002,1200,Jane,Smith
-T003,BK003,12A,F003,800,Alice,Johnson
-T004,BK004,1B,F001,950,Bob,Brown
-T005,BK005,2A,F005,8400,Samanta,Morini
-T006,BK005,11B,F005,1000,Andrea,Morini
+ticketNumber,bookingId,flightNumber,seatNumber,price,passengerName,passengerSurname
+T001,BK001,F001,1A,1000,John,Doe
+T002,BK002,F002,10C,250,Jane,Smith
+T003,BK003,F003,12A,760,Alice,Johnson
+T004,BK004,F001,1B,1000,Bob,Brown
+T005,BK005,F005,2A,2000,Samanta,Morini
+T006,BK005,F005,11B,1000,Andrea,Morini

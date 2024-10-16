@@ -45,19 +45,6 @@ public class TicketManager {
         }
     }
 
-    public List<Ticket> getAllTickets() {
-        return tickets;
-    }
-
-    public Ticket getTicketByNumber(String ticketNumber) {
-        for (Ticket ticket : tickets) {
-            if (ticket.getTicketNumber().equalsIgnoreCase(ticketNumber)) {
-                return ticket;
-            }
-        }
-        return null;
-    }
-
     public void addTicket(Ticket ticket) throws IOException {
         for (Ticket existingTicket : tickets) {
             if (existingTicket.getTicketNumber().equalsIgnoreCase(ticket.getTicketNumber())) {
@@ -98,7 +85,8 @@ public class TicketManager {
         }
     }
 
-    public void updateTicket(Ticket updatedTicket) throws IOException {
+    public void updateTicket(String ticketNumber) throws IOException {
+        Ticket updatedTicket = getTicketByNumber(ticketNumber);
         for (int i = 0; i < tickets.size(); i++) {
             Ticket ticket = tickets.get(i);
             if (ticket.getTicketNumber().equalsIgnoreCase(updatedTicket.getTicketNumber())) {
@@ -132,5 +120,18 @@ public class TicketManager {
             log.error("An error occurred while saving tickets on file CSV: " + e.getMessage());
             throw e;
         }
+    }
+
+    public List<Ticket> getAllTickets() {
+        return tickets;
+    }
+
+    public Ticket getTicketByNumber(String ticketNumber) {
+        for (Ticket ticket : tickets) {
+            if (ticket.getTicketNumber().equalsIgnoreCase(ticketNumber)) {
+                return ticket;
+            }
+        }
+        return null;
     }
 }

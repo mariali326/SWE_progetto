@@ -21,7 +21,7 @@ public class FlightManagerTest {
     }
 
     @Test
-    @DisplayName("Text that checks loading flights from the file CSV and verifies it's possible find a flight written on the file")
+    @DisplayName("Text that checks loading flights from the file CSV and verifies that it's possible to find a flight written on the file")
     public void testLoadFlightsFromCSV() {
         List<Flight> flights = flightManager.getAllFlights();
 

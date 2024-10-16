@@ -37,12 +37,12 @@ public class FlightPlanner {
 
         flightClassPrices = new HashMap<>();
         // Prezzi per le varie classi di ogni volo
-        addFlightClassPrices("F001", 200.0, 500.0, 700.0);
-        addFlightClassPrices("F002", 100.0, 300.0, 500.0);
-        addFlightClassPrices("F003", 260.0, 560.0, 760.0);
-        addFlightClassPrices("F004", 575.0, 775.0, 975.0);
-        addFlightClassPrices("F005", 550.0, 750.0, 950.0);
-        addFlightClassPrices("F006", 160.0, 360.0, 560.0);
+        addFlightClassPrices("F001", 500.0, 1000.0, 1500.0);
+        addFlightClassPrices("F002", 250.0, 750.0, 1250.0);
+        addFlightClassPrices("F003", 760.0, 1260.0, 1760.0);
+        addFlightClassPrices("F004", 820.0, 1320.0, 1820.0);
+        addFlightClassPrices("F005", 1000.0, 1500.0, 2000.0);
+        addFlightClassPrices("F006", 270.0, 770.0, 1270.0);
     }
 
     public void addFlightClassPrices(String flightNumber, double economyPrice, double businessPrice, double firstClassPrice) {
@@ -231,7 +231,7 @@ public class FlightPlanner {
         Flight flight = flightManager.getFlightByNumber(flightNumber);
         if (flight != null) {
             seatManager.releaseSeat(seatId, flightNumber);
-            System.out.println("Seat released from flight: " + flightNumber);
+            System.out.println("Seat " + seatId + " released from flight " + flightNumber);
         } else {
             System.out.println("Flight " + flightNumber + " not found.");
         }
@@ -272,6 +272,14 @@ public class FlightPlanner {
         } else {
             throw new IllegalArgumentException("Flight " + flightNumber + " not found.");
         }
+    }
+
+    public String getSeatClass(String seatNumber, String flightNumber) {
+        Seat seat = seatManager.getSeatByNumber(seatNumber, flightNumber);
+        if (seat != null) {
+            return seat.getClassType();
+        }
+        return null;
     }
 
     public void addPayment(Payment payment) throws IOException {
@@ -332,6 +340,19 @@ public class FlightPlanner {
             cancelBooking(bookingId, passenger);
         } else {
             // Si aggiorna la prenotazione con i biglietti rimanenti
+            bookingManager.updateBooking(booking);
+        }
+    }
+
+    public void updateTicket(String ticketNumber, String newSeatNumber, double newPrice) throws IOException {
+        Ticket ticket = ticketManager.getTicketByNumber(ticketNumber);
+        double originalPrice = ticket.getPrice();
+        Booking booking = bookingManager.getBookingById(ticket.getBookingId());
+        if (booking != null) {
+            ticket.setPrice(newPrice);
+            ticket.setSeatNumber(newSeatNumber);
+            ticketManager.updateTicket(ticketNumber);
+            booking.setTotalAmount(booking.getTotalAmount() - originalPrice + newPrice);
             bookingManager.updateBooking(booking);
         }
     }

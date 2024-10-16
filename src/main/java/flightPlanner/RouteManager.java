@@ -66,19 +66,6 @@ public class RouteManager {
         }
     }
 
-    public List<Route> getAllRoutes() {
-        return routes;
-    }
-
-    public Route getRouteById(String routeId) {
-        for (Route route : routes) {
-            if (route.getRouteId().equalsIgnoreCase(routeId)) {
-                return route;
-            }
-        }
-        return null;
-    }
-
     private void loadRoutes() throws IOException {
         List<String[]> records = csvManager.readAll();
         // Si salta l'header
@@ -126,6 +113,19 @@ public class RouteManager {
             log.error("An error occurred while saving on file CSV: " + e.getMessage());
             throw e;
         }
+    }
+
+    public List<Route> getAllRoutes() {
+        return routes;
+    }
+
+    public Route getRouteById(String routeId) {
+        for (Route route : routes) {
+            if (route.getRouteId().equalsIgnoreCase(routeId)) {
+                return route;
+            }
+        }
+        return null;
     }
 
     public Route getRouteByAirportsCode(String departureCode, String arrivalCode) {

@@ -156,8 +156,17 @@ public class FlightPlannerApp extends Application {
         Button cancelBookingButton = new Button("Cancel Booking");
         cancelBookingButton.setOnAction(_ -> showCancelBooking());
 
-        Button cancelTicketBtn = new Button("Cancel ticket");
+        Button cancelTicketBtn = new Button("Cancel Ticket");
         cancelTicketBtn.setOnAction(_ -> showCancelTicket());
+
+        Button changeSeatButton = new Button("Change Seat");
+        changeSeatButton.setOnAction(_ -> {
+            try {
+                showChangeSeat();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         Button searchFlightsButton = new Button("Search Flights");
         searchFlightsButton.setOnAction(_ -> showSearchFlights());
@@ -206,7 +215,141 @@ public class FlightPlannerApp extends Application {
         });
 
         vbox.getChildren().addAll(userLabel, welcomeLabel, viewBookingsButton, bookFlightButton, cancelBookingButton,
-                cancelTicketBtn, searchFlightsButton, manageNotificationsButton, paymentMethodButton, updateUserCredentialsBtn, unsubscribeButton);
+                cancelTicketBtn, changeSeatButton, searchFlightsButton, manageNotificationsButton, paymentMethodButton, updateUserCredentialsBtn, unsubscribeButton);
+    }
+
+    private void showChangeSeat() throws IOException {
+        VBox layout = new VBox(10);
+        Label changeSeatLabel = new Label("Change your seat to an equal or higher class type.\nWhen you choose a higher class type, you need to pay the price difference.");
+
+        TextInputDialog bookingDialog = new TextInputDialog();
+        bookingDialog.setHeaderText("Enter Booking Id to change");
+        String bookingId = bookingDialog.showAndWait().orElse("");
+
+        if (bookingId.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "Enter the booking Id to proceed.");
+            return;
+        } else if (!flightPlanner.checkBookingExistence(bookingId)) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "Booking Id " + bookingId + " not found.");
+            return;
+        }
+
+        TextInputDialog ticketDialog = new TextInputDialog();
+        ticketDialog.setHeaderText("Enter Ticket number to change");
+
+        String ticketNumber = ticketDialog.showAndWait().orElse("");
+
+        if (ticketNumber.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "Enter the ticket number to proceed.");
+            return;
+        }
+
+        Ticket ticket = flightPlanner.findTicket(bookingId, ticketNumber);
+
+        if (ticket == null) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "Ticket not found. Please check the Ticket Number.");
+            return;
+        }
+
+        String flightNumber = ticket.getFlightNumber();
+        String currentSeatNumber = ticket.getSeatNumber();
+        String currentClass = flightPlanner.getSeatClass(currentSeatNumber, flightNumber);
+        Map<String, String> availableSeats = flightPlanner.getAvailableSeatsWithClass(flightNumber);
+
+        if (availableSeats.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Error", "No available seats for this flight.");
+            return;
+        }
+
+        Map<String, String> currentBookingSeats = new HashMap<>();
+        List<String> seatOptions = new ArrayList<>();
+        for (Map.Entry<String, String> entry : availableSeats.entrySet()) {
+            seatOptions.add("Seat: " + entry.getKey() + " (" + entry.getValue() + ")");
+        }
+
+        ChoiceDialog<String> seatDialog = new ChoiceDialog<>(seatOptions.get(0), seatOptions);
+        seatDialog.setHeaderText("Choose seat for ticket " + ticketNumber);
+        Optional<String> selectedSeatOption = seatDialog.showAndWait();
+
+        String selectedSeat;
+        String selectedClassType;
+        if (selectedSeatOption.isPresent()) {
+            String[] seatParts = selectedSeatOption.get().split(" ");
+            selectedSeat = seatParts[1];  // Estrae il numero del posto
+            selectedClassType = seatParts[2].replace("(", "").replace(")", "");  // Estrae il tipo di classe
+
+            currentBookingSeats.put(ticket.getPassengerName(), selectedSeat);
+            flightPlanner.bookSeat(flightNumber, selectedSeat);
+            availableSeats.remove(selectedSeat);
+        } else {
+            // Se l'utente chiude la finestra senza scegliere nulla, fallisce la modifica
+            flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+            showAlert(Alert.AlertType.ERROR, "Error", "You closed the seat selection. Booking has been cancelled.");
+            return;
+        }
+
+        double newSeatPrice = flightPlanner.getPrice(flightNumber, selectedClassType);
+        Passenger loggedInUser = flightPlanner.getPassenger(authManager.getLoggedInUser());
+
+        Button changeSeatAndPayButton = new Button("Change Seat and Pay");
+
+        Map<String, Integer> classRanking = new HashMap<>();
+        classRanking.put("Economy", 1);
+        classRanking.put("Business", 2);
+        classRanking.put("First", 3);
+
+        changeSeatAndPayButton.setOnAction(_ -> {
+            int currentClassRank = classRanking.get(currentClass);
+            int newClassRank = classRanking.get(selectedClassType);
+            double currentPrice = flightPlanner.getPrice(flightNumber, currentClass);
+
+            if (newClassRank == currentClassRank) {
+                // Stessa classe, nessun pagamento aggiuntivo
+                try {
+                    flightPlanner.releaseSeat(flightNumber, currentSeatNumber);
+                    flightPlanner.updateTicket(ticket.getTicketNumber(), selectedSeat, newSeatPrice);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                showAlert(Alert.AlertType.INFORMATION, "Success",
+                        "You do not need to pay the price difference!\nNow your seat is " + selectedSeat + " " + selectedClassType + ".");
+
+            } else if (newClassRank > currentClassRank) {
+                // Classe superiore
+                double priceDifference = newSeatPrice - currentPrice;
+                String paymentId = UUID.randomUUID().toString();
+
+                Payment newPay = new Payment(paymentId, ticket.getBookingId(), priceDifference, LocalDateTime.now(), loggedInUser.getPaymentMethod(), loggedInUser.getUsername());
+                try {
+                    flightPlanner.releaseSeat(ticket.getFlightNumber(), ticket.getSeatNumber());
+                    flightPlanner.addPayment(newPay);
+                    flightPlanner.updateTicket(ticket.getTicketNumber(), selectedSeat, newSeatPrice);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+                showAlert(Alert.AlertType.INFORMATION, "Payment Success",
+                        "Payment successful with " + loggedInUser.getPaymentMethod() +
+                                "!\nNow your seat is " + selectedSeat + " " + selectedClassType + ".");
+            }
+            showMainAppScreen();
+        });
+        Button cancelButton = new Button("Cancel Changing");
+        cancelButton.setOnAction(_ -> {
+            try {
+                flightPlanner.releaseSeatsForCurrentBooking(ticket.getFlightNumber(), currentBookingSeats);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            showAlert(Alert.AlertType.ERROR, "Cancelled", "You didn't finish your modification or payment. Your changing has been cancelled.");
+            showMainAppScreen();
+        });
+
+        layout.getChildren().addAll(changeSeatLabel, changeSeatAndPayButton, cancelButton);
+
+        Scene scene = new Scene(layout, 440, 200);
+        primaryStage.setScene(scene);
+        primaryStage.show();
     }
 
     private void showUpdateCredentials() {
@@ -608,7 +751,7 @@ public class FlightPlannerApp extends Application {
                     throw new RuntimeException(ex);
                 }
                 showMainAppScreen();
-                showAlert(Alert.AlertType.INFORMATION, "Success", "Payment successful with " + mainPassenger.getPaymentMethod() + "!");
+                showAlert(Alert.AlertType.INFORMATION, "Success", " Changing seat has been processed successfully !");
             });
         } else {
             ChoiceDialog<String> paymentMethodDialog = new ChoiceDialog<>("CREDIT_CARD", "DEBIT_CARD", "PAYPAL", "BANK_TRANSFER");
@@ -763,7 +906,7 @@ public class FlightPlannerApp extends Application {
                 bookingsText.append("Booking ID: ").append(booking.getBookingId()).append("\n");
                 bookingsText.append("Flight number: ").append(booking.getFlightNumber()).append("\n");
                 bookingsText.append("Date: ").append(booking.getBookingDate()).append("\n");
-                bookingsText.append("Total Amount: ").append(booking.getTotalAmount()).append("\n");
+                bookingsText.append("Total Amount: ").append(booking.getTotalAmount()).append(" EUR\n");
                 bookingsText.append("Tickets:\n");
 
                 // Si itera attraverso i biglietti della prenotazione e si stampano i dettagli di ciascun biglietto
@@ -771,8 +914,8 @@ public class FlightPlannerApp extends Application {
                     bookingsText.append("Ticket Number: ").append(ticket.getTicketNumber())
                             .append(", Flight Number: ").append(ticket.getFlightNumber())
                             .append(", Seat: ").append(ticket.getSeatNumber())
-                            .append(", Passenger Name: ").append(ticket.getPassengerName())
-                            .append(" Passenger Surname: ").append(ticket.getPassengerSurname())
+                            .append(", Passenger: ").append(ticket.getPassengerName())
+                            .append(" ").append(ticket.getPassengerSurname())
                             .append("\n");
                 }
                 bookingsText.append("\n"); // Si aggiunge una riga vuota tra una prenotazione e l'altra

@@ -19,7 +19,7 @@ public class AirportManagerTest {
     }
 
     @Test
-    @DisplayName("Text that checks loading airports from the file CSV and verifies it's possible find an airport written on the file")
+    @DisplayName("Text that checks loading airports from the file CSV and verifies that it's possible to find an airport written on the file")
     public void testLoadAirportsFromCSV() {
         List<Airport> airports = airportManager.getAllAirports();
 

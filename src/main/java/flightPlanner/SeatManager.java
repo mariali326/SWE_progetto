@@ -45,24 +45,6 @@ public class SeatManager {
         }
     }
 
-    public List<Seat> getAllSeats() {
-        return seats;
-    }
-
-    public Seat getSeatByNumber(String seatNumber, String flightNumber) {
-        return seats.stream()
-                .filter(seat -> seat.getSeatNumber().equalsIgnoreCase(seatNumber) &&
-                        seat.getFlightNumber().equalsIgnoreCase(flightNumber))
-                .findFirst()
-                .orElse(null);
-    }
-
-    public List<Seat> getSeatsByFlightNumber(String flightNumber) {
-        return seats.stream()
-                .filter(seat -> seat.getFlightNumber().equals(flightNumber))
-                .collect(Collectors.toList());
-    }
-
     public void addSeat(Seat seat) throws IOException {
         if (!seats.contains(seat)) {
             seat.setAvailable(true);
@@ -122,7 +104,7 @@ public class SeatManager {
         boolean seatFound = false;
         for (Seat seat : seats) {
             if (seat.getSeatNumber().equalsIgnoreCase(seatNumber) && seat.isAvailable()) {
-                seat.setAvailable(false); // Imposta il posto come prenotato (non disponibile)
+                seat.setAvailable(false); // Viene impostato il posto come prenotato (non disponibile)
                 saveAllSeats();
                 System.out.println("Seat " + seatNumber + " successfully booked.");
                 seatFound = true; // Prenotazione completata con successo
@@ -166,5 +148,23 @@ public class SeatManager {
             availableSeatsNumWithClassType.put(seat.getSeatNumber(), seat.getClassType());
         }
         return availableSeatsNumWithClassType;
+    }
+
+    public List<Seat> getAllSeats() {
+        return seats;
+    }
+
+    public Seat getSeatByNumber(String seatNumber, String flightNumber) {
+        return seats.stream()
+                .filter(seat -> seat.getSeatNumber().equalsIgnoreCase(seatNumber) &&
+                        seat.getFlightNumber().equalsIgnoreCase(flightNumber))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public List<Seat> getSeatsByFlightNumber(String flightNumber) {
+        return seats.stream()
+                .filter(seat -> seat.getFlightNumber().equals(flightNumber))
+                .collect(Collectors.toList());
     }
 }

@@ -4,8 +4,8 @@ public class Ticket {
     private final String ticketNumber;
     private final String bookingId;
     private final String flightNumber;
-    private final String seatNumber;
-    private final double price;
+    private String seatNumber;
+    private double price;
     private final String passengerName;
     private final String passengerSurname;
 
@@ -35,8 +35,16 @@ public class Ticket {
         return seatNumber;
     }
 
+    public void setSeatNumber(String seatNumber) {
+        this.seatNumber = seatNumber;
+    }
+
     public double getPrice() {
         return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
     }
 
     public String getPassengerName() {
@@ -50,6 +58,6 @@ public class Ticket {
     @Override
     public String toString() {
         return "Ticket Number: " + ticketNumber + ", Flight Number: " + flightNumber + ", Seat: " + seatNumber +
-                " Passenger: " + passengerName + " " + passengerSurname;
+                ", Passenger: " + passengerName + " " + passengerSurname;
     }
 }

@@ -72,12 +72,12 @@ public class PaymentManagerTest {
 
     @Test
     @DisplayName("Test that checks updating a payment status works correctly")
-// Anche se penso un payment non dovrebbe essere aggiornato, nemmeno in caso di rimborso
+// Anche se penso un payment non dovrebbe essere aggiornato, nemmeno in caso di cambio di modalità di pagamento
     public void testUpdatePayment() throws IOException {
-        Payment updatePayment = new Payment("P001", "BK001", 450.0, LocalDateTime.of(2024, 9, 20, 8, 0), PaymentMethod.CREDIT_CARD, "jdoe");
+        Payment updatePayment = new Payment("P001", "BK001", 1500.0, LocalDateTime.of(2024, 12, 20, 8, 0), PaymentMethod.PAYPAL, "jdoe");
         paymentManager.updatePayment(updatePayment);
 
         Payment updated = paymentManager.getPaymentById("P001");
-        assertEquals(450.0, updated.getAmountPayed());
+        assertEquals(PaymentMethod.PAYPAL,updated.getPaymentMethod());
     }
 }
