@@ -8,7 +8,7 @@ public class Payment {
     private final double amountPayed;
     private final LocalDateTime paymentDate;
     private final String passengerUsername;
-    private PaymentMethod method;
+    private final PaymentMethod method;
 
     public Payment(String paymentId, String bookingId, double amountPayed, LocalDateTime paymentDate, PaymentMethod method, String passengerUsername) {
         this.paymentId = paymentId;
@@ -39,10 +39,6 @@ public class Payment {
         return method;
     }
 
-    public void setMethod(PaymentMethod method) {
-        this.method = method;
-    }
-
     public String getPassengerUsername() {
         return passengerUsername;
     }
@@ -50,6 +46,6 @@ public class Payment {
     @Override
     public String toString() {
         return "Payment ID: " + paymentId + ", Booking Id: " + bookingId + ", Amount Payed: " + amountPayed +
-                ", Payment Date: " + paymentDate + ", Payment Method: " + method + ", Passenger Username: " + passengerUsername;
+                " EUR, Payment Date: " + paymentDate + ", Payment Method: " + method + ", Passenger Username: " + passengerUsername;
     }
 }

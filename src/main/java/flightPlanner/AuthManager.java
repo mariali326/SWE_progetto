@@ -14,11 +14,9 @@ import java.util.Map;
 
 public class AuthManager {
     private static final Log log = LogFactory.getLog(AuthManager.class);
-    private Map<String, String> users;  // Mappa di username e password
-    private Map<String, String> emails; // Mappa di username ed email
-    private Map<String, String> userRoles;//Mappa di username e ruoli
+    private final Map<String, User> users;  // Mappa di username e oggetti User (Admin o Passenger)
+    private final CSVManager csvManager;
     private String loggedInUser;
-    private CSVManager csvManager;
 
     public AuthManager() throws IOException {
         String csvFilePath = "csv/users.csv";
@@ -28,21 +26,18 @@ public class AuthManager {
         }
         this.csvManager = new CSVManager(new InputStreamReader(inputStream));
         users = new HashMap<>();
-        emails = new HashMap<>();
-        userRoles = new HashMap<>();
         loadUsersFromCSV();
 
         // Aggiungere un amministratore predefinito se non esiste
         if (!users.containsKey("admin")) {
-            users.put("admin", "admin123");
-            emails.put("admin", "admin@example.com");
-            userRoles.put("admin", "Admin");
+            users.put("admin", new Admin("admin", "admin123", "admin@example.com"));
         }
         loggedInUser = null;
     }
 
     public boolean login(String username, String password) {
-        if (users.containsKey(username) && users.get(username).equals(password)) {
+        User user = users.get(username);
+        if (user != null && user.getPassword().equals(password)) {
             loggedInUser = username;
             return true;
         }
@@ -50,10 +45,14 @@ public class AuthManager {
     }
 
     public boolean register(String username, String password, String email, String role) throws IOException {
-        if (!users.containsKey(username) && !emails.containsValue(email)) {
-            users.put(username, password);
-            emails.put(username, email);
-            userRoles.put(username, role);
+        if (role.equals("Admin")) {
+            System.out.println("Cannot register another admin.");
+            return false;
+        }
+
+        if (!users.containsKey(username)) {
+            User newUser = new Passenger(username, "", "", email, "", password, null, null, null, "", "");
+            users.put(username, newUser);
 
             String[] record = {
                     username,
@@ -64,7 +63,7 @@ public class AuthManager {
             try {
                 csvManager.appendRecord(record, "csv/users.csv");
             } catch (IOException e) {
-                log.error("An error occurred while writing an user on file CSV", e);
+                log.error("An error occurred while writing an user to the CSV file", e);
                 throw e;
             }
             saveUsersToCSV();
@@ -80,7 +79,8 @@ public class AuthManager {
     }
 
     public String getCurrentUserRole() {
-        return userRoles.get(loggedInUser);
+        User user = users.get(loggedInUser);
+        return user instanceof Admin ? "Admin" : "Passenger";
     }
 
     public String getLoggedInUser() {
@@ -89,11 +89,13 @@ public class AuthManager {
 
     // Serve per ottenere l'email dell'utente attualmente loggato
     public String getLoggedInUserEmail() {
-        return emails.get(loggedInUser);
+        User user = users.get(loggedInUser);
+        return user != null ? user.getEmail() : null;
     }
 
     public String getLoggedInUserPassword() {
-        return users.get(getLoggedInUser());
+        User user = users.get(loggedInUser);
+        return user != null ? user.getPassword() : null;
     }
 
     // Controlla se l'utente è un amministratore
@@ -101,22 +103,15 @@ public class AuthManager {
         return "admin".equals(loggedInUser);
     }
 
-    public Map<String, String> getUsers() {
+    public Map<String, User> getUsers() {
         return users;
-    }
-
-    public Map<String, String> getEmails() {
-        return emails;
-    }
-
-    public Map<String, String> getUserRoles() {
-        return userRoles;
     }
 
     public boolean updateUser(String username, String newPassword, String newEmail) throws IOException {
         if (users.containsKey(username)) {
-            users.put(username, newPassword);
-            emails.put(username, newEmail);
+            User user = users.get(username);
+            user.setPassword(newPassword);
+            user.setEmail(newEmail);
             saveUsersToCSV();
             return true;
         }
@@ -126,8 +121,6 @@ public class AuthManager {
     public void removeUser(String username) throws IOException {
         if (users.containsKey(username)) {
             users.remove(username);
-            emails.remove(username);
-            userRoles.remove(username);
             saveUsersToCSV();
             System.out.println("User unsubscribed: " + username);
         }
@@ -142,28 +135,33 @@ public class AuthManager {
             String password = record[1];
             String email = record[2];
             String role = record[3];
-            users.put(username, password);
-            emails.put(username, email);
-            userRoles.put(username, role);
 
+            User user;
+            if ("Admin".equalsIgnoreCase(role)) {
+                user = new Admin(username, password, email);
+            } else {
+                user = new Passenger(username, "", "", email, "", password, null, null, null, "", "");
+            }
+            users.put(username, user);
         }
     }
 
     public void saveUsersToCSV() throws IOException {
         List<String[]> records = new ArrayList<>();
         records.add(new String[]{"username", "password", "email", "role"});
-        for (String username : users.keySet()) {
+
+        for (User user : users.values()) {
             records.add(new String[]{
-                    username,
-                    users.get(username),
-                    emails.get(username),
-                    userRoles.get(username)
+                    user.getUsername(),
+                    user.getPassword(),
+                    user.getEmail(),
+                    user instanceof Admin ? "Admin" : "Passenger"
             });
         }
         try {
             csvManager.writeAll(records, "csv/users.csv");
         } catch (IOException e) {
-            log.error("An error occurred while saving users on file CSV: " + e.getMessage());
+            log.error("An error occurred while saving users to the CSV file: " + e.getMessage());
             throw e;
         }
     }

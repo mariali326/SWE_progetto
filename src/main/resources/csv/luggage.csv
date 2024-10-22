@@ -1,0 +1,11 @@
+LuggageId,ticketNumber,luggageType,length,width,height,weight,cost
+L001,T001,cabin,40,30,20,8,0
+L002,T002,cabin,40,30,20,8,0
+L003,T003,cabin,40,30,20,8,0
+L004,T003,hold,50,40,20,23,0
+L005,T004,cabin,40,30,20,8,0
+L006,T005,cabin,40,30,20,8,0
+L007,T005,hold,60,50,25,32,0
+L008,T005,hold,60,50,25,33,100
+L009,T006,cabin,40,30,20,7,0
+L010,T006,hold,50,40,20,22,0

@@ -21,7 +21,7 @@ public class PaymentManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks loading a payment from the file CSV")
+    @DisplayName("Test that checks loading a payment from the CSV file")
     public void testLoadPaymentFromCSV() {
         List<Payment> payments = paymentManager.getAllPayments();
 
@@ -33,7 +33,7 @@ public class PaymentManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks adding a new payment works well and after addition the file CSV is updated")
+    @DisplayName("Test that checks if adding a new payment works correctly and the file CSV is updated after addition")
     public void testAddPayment() throws IOException {
         Payment newPayment = new Payment("P007", "BK007", 450.0, LocalDateTime.now(),
                 PaymentMethod.BANK_TRANSFER, "someone");
@@ -60,7 +60,7 @@ public class PaymentManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks removing a payment from the CSV file")
+    @DisplayName("Test that checks removing a payment from the CSV file works correctly")
     public void testRemovePayment() throws IOException {
         String paymentId = "P002";
 
@@ -70,14 +70,4 @@ public class PaymentManagerTest {
         assertNull(removedPayment);
     }
 
-    @Test
-    @DisplayName("Test that checks updating a payment status works correctly")
-// Anche se penso un payment non dovrebbe essere aggiornato, nemmeno in caso di cambio di modalità di pagamento
-    public void testUpdatePayment() throws IOException {
-        Payment updatePayment = new Payment("P001", "BK001", 1500.0, LocalDateTime.of(2024, 12, 20, 8, 0), PaymentMethod.PAYPAL, "jdoe");
-        paymentManager.updatePayment(updatePayment);
-
-        Payment updated = paymentManager.getPaymentById("P001");
-        assertEquals(PaymentMethod.PAYPAL,updated.getPaymentMethod());
-    }
 }

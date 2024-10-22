@@ -10,9 +10,9 @@ import java.io.Reader;
 import java.util.List;
 
 public class CSVManager {
-    private Reader reader;
-    private char separator;
-    private char quoteChar;
+    private final Reader reader;
+    private final char separator;
+    private final char quoteChar;
 
     public CSVManager(Reader reader) {
         this(reader, ',', '\"');

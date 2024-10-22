@@ -8,7 +8,7 @@ public class Booking {
     private final String passengerUsername;
     private final String flightNumber;
     private final LocalDateTime bookingDate;
-    private List<Ticket> tickets; // Un insieme di biglietti acquistati da un passeggero per un volo specifico
+    private final List<Ticket> tickets; // Un insieme di biglietti acquistati da un passeggero per un volo specifico
     private double totalAmount;
 
     public Booking(String bookingId, String passengerUsername, String flightNumber, LocalDateTime bookingDate, List<Ticket> tickets, double totalAmount) {

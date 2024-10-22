@@ -1,5 +1,4 @@
 package flightPlanner;
-//da sistemare
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -72,6 +71,11 @@ public class FlightPlannerApp extends Application {
                 return; // Si esce dalla funzione se i campi non sono completi
             }
 
+            if (username.equals("not defined")) {
+                showAlert(Alert.AlertType.ERROR, "Error", "You cannot use this username! Please change to another one.");
+                return;
+            }
+
             if (!email.matches("^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$")) {
                 showAlert(Alert.AlertType.ERROR, "Invalid Email", "Please provide a valid email address.");
                 return;
@@ -84,10 +88,7 @@ public class FlightPlannerApp extends Application {
 
             try {
                 if (authManager.register(username, password, email, "Passenger")) {
-                    authManager.getUsers().put(username, password);
-                    authManager.getEmails().put(username, email);
-                    authManager.getUserRoles().put(username, "Passenger");
-                    Passenger passenger = new Passenger(username, "", "", email, "", password, new HashSet<>(), new ArrayList<>(), null);
+                    Passenger passenger = (Passenger) authManager.getUsers().get(username);
                     try {
                         flightPlanner.registerPassenger(passenger);
                     } catch (IOException ex) {
@@ -95,7 +96,7 @@ public class FlightPlannerApp extends Application {
                     }
                     showAlert(Alert.AlertType.INFORMATION, "Registration Successful", "You can now log in.");
                 } else {
-                    showAlert(Alert.AlertType.ERROR, "Registration Failed", "Username or email already exists.");
+                    showAlert(Alert.AlertType.ERROR, "Registration Failed", "Username already exists.");
                 }
             } catch (IOException ex) {
                 showAlert(Alert.AlertType.ERROR, "Error", "An error occurred during registration.");
@@ -112,7 +113,7 @@ public class FlightPlannerApp extends Application {
     private void showMainAppScreen() {
 // Layout dell'interfaccia utente
         VBox vbox = new VBox(10);
-        Label titleLable = new Label("Flight Planner");
+        Label titleLabel = new Label("Flight Planner");
 
         if (authManager.getCurrentUserRole().equals("Admin")) {
             showAdminInterface(vbox);
@@ -128,7 +129,7 @@ public class FlightPlannerApp extends Application {
         });
 
         // Si aggiungono elementi al layout
-        vbox.getChildren().addAll(titleLable, logoutButton);
+        vbox.getChildren().addAll(titleLabel, logoutButton);
 
         // Si configurano scena e stage
         Scene scene = new Scene(vbox, 500, 550);
@@ -159,6 +160,15 @@ public class FlightPlannerApp extends Application {
         Button cancelTicketBtn = new Button("Cancel Ticket");
         cancelTicketBtn.setOnAction(_ -> showCancelTicket());
 
+        Button addLuggageButton = new Button("Add additional Luggage");
+        addLuggageButton.setOnAction(_ -> {
+            try {
+                showAddLuggageForm();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
         Button changeSeatButton = new Button("Change Seat");
         changeSeatButton.setOnAction(_ -> {
             try {
@@ -186,6 +196,14 @@ public class FlightPlannerApp extends Application {
         Button updateUserCredentialsBtn = new Button("Update my credentials");
         updateUserCredentialsBtn.setOnAction(_ -> showUpdateCredentials());
 
+        Button unsubscribeButton = getUnsubscribeButton();
+
+        vbox.getChildren().addAll(userLabel, welcomeLabel, viewBookingsButton, bookFlightButton, cancelBookingButton,
+                cancelTicketBtn, addLuggageButton, changeSeatButton, searchFlightsButton, manageNotificationsButton,
+                paymentMethodButton, updateUserCredentialsBtn, unsubscribeButton);
+    }
+
+    private Button getUnsubscribeButton() {
         Button unsubscribeButton = new Button("Unsubscribe");
         unsubscribeButton.setOnAction(_ -> {
             boolean confirmed = showConfirmationDialog();
@@ -213,13 +231,322 @@ public class FlightPlannerApp extends Application {
                 }
             }
         });
-
-        vbox.getChildren().addAll(userLabel, welcomeLabel, viewBookingsButton, bookFlightButton, cancelBookingButton,
-                cancelTicketBtn, changeSeatButton, searchFlightsButton, manageNotificationsButton, paymentMethodButton, updateUserCredentialsBtn, unsubscribeButton);
+        return unsubscribeButton;
     }
 
+    private void showAddLuggageForm() throws IOException {
+        VBox vbox = new VBox(10);
+
+        TextInputDialog bookingDialog = new TextInputDialog();
+        bookingDialog.setHeaderText("Enter Booking ID.");
+        String bookingId = bookingDialog.showAndWait().orElse("");
+
+        if (bookingId.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter a bookingId to proceed.");
+            return;
+        } else if (flightPlanner.checkBookingNotExistence(bookingId)) {
+            showAlert(Alert.AlertType.ERROR, "Invalid Input", "Booking Id " + bookingId + " not found.");
+            return;
+        }
+
+        TextInputDialog ticketDialog = new TextInputDialog();
+        ticketDialog.setHeaderText("Enter Ticket Number.");
+        String ticketNumber = ticketDialog.showAndWait().orElse("");
+
+        if (ticketNumber.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "Enter the ticket number to proceed.");
+            return;
+        }
+
+        Ticket ticket = flightPlanner.findTicket(bookingId, ticketNumber);
+
+        if (ticket == null) {
+            showAlert(Alert.AlertType.ERROR, "Invalid Input", "Ticket not found. Please check the Ticket Number.");
+            return;
+        }
+
+        List<Booking> bookings = flightPlanner.getBookingsForPassenger(authManager.getLoggedInUser());
+        boolean ticketFound = false;
+
+        for (Booking booking : bookings) {
+            if (booking.getTickets().contains(ticket)) {
+                ticketFound = true;
+                break;
+            }
+        }
+
+        if (!ticketFound) {
+            showAlert(Alert.AlertType.ERROR, "Invalid Access", "You cannot add luggage for a booking not booked by you!");
+            return;
+        }
+
+        showAlert(Alert.AlertType.INFORMATION, "Luggage Information",
+                """
+                        Standard luggage sizes:
+                        - Cabin Luggage: ONE FREE for all passengers (Max Size: 40x30x20 cm)
+                        - Hold Luggage: ONE FREE for flights longer than 6 hours
+                              - Economy Max Size 50x40x20 cm and Max Weight 23 kg
+                              - Business Max Size 60x50x25 cm and Max Weight 32 kg
+                              - First Max Size 70x60x30 and Max Weight 34 kg
+                        Note:
+                        -For exceeding luggage dimensions, you need to pay an extra cost of 50 EUR.
+                        -For every kg of luggage weight exceeding, you need to pay an extra of 50 EUR.
+                        -For each additional cabin/hold luggage, you need to pay an extra of 100 EUR.""");
+
+        Passenger loggedInUser = flightPlanner.getPassenger(authManager.getLoggedInUser());
+
+        // Si deve verificare quanti bagagli ha già l'utente
+        int cabinLuggageCount = ticket.getCabinLuggageCount();
+        int holdLuggageCount = ticket.getHoldLuggageCount();
+
+        if (cabinLuggageCount >= 2) {
+            showAlert(Alert.AlertType.ERROR, "Limit Exceeded", "You cannot add more cabin luggage.");
+            return;
+        }
+
+        if (holdLuggageCount >= 3) {
+            showAlert(Alert.AlertType.ERROR, "Limit Exceeded", "You cannot add more hold luggage.");
+            return;
+        }
+
+        int possibleCabinLuggageCount = 2 - cabinLuggageCount;
+        int possibleHoldLuggageCount = 3 - holdLuggageCount;
+
+        List<Luggage> luggageList = new ArrayList<>();
+        double totalLuggagePrice = 0;
+        String classType = flightPlanner.getSeatClass(ticket.getSeatNumber(), ticket.getFlightNumber());
+
+        TextInputDialog numberOfCabinLuggageDialog = new TextInputDialog();
+        numberOfCabinLuggageDialog.setTitle("Cabin Luggage Registration");
+        numberOfCabinLuggageDialog.setHeaderText("How many cabin bags do you want to register for " + ticket.getPassengerName() + "?");
+        String numberOfCabinLuggageStr = numberOfCabinLuggageDialog.showAndWait().orElse("");
+        int numberOfCabinLuggage;
+        try {
+            numberOfCabinLuggage = Integer.parseInt(numberOfCabinLuggageStr);
+            if (numberOfCabinLuggage < 0 || numberOfCabinLuggage > possibleCabinLuggageCount) {
+                showAlert(Alert.AlertType.ERROR, "Invalid Cabin Luggage Number", "You can only add " + possibleCabinLuggageCount + " more cabin luggage !");
+                flightPlanner.removeLuggage(luggageList);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter a valid number between 0 and " + possibleCabinLuggageCount);
+            flightPlanner.removeLuggage(luggageList);
+            return;
+        }
+
+        for (int j = 0; j < numberOfCabinLuggage; j++) {
+            TextInputDialog lengthDialog = new TextInputDialog();
+            lengthDialog.setHeaderText("Enter Length (cm) for luggage " + (j + 1));
+            String lengthStr = lengthDialog.showAndWait().orElse("");
+            double length;
+            try {
+                length = Double.parseDouble(lengthStr);
+                if (length < 0 || length > 55) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum length of the luggage is 55 cm.");
+                    flightPlanner.removeLuggage(luggageList);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Error", "Invalid length number.");
+                flightPlanner.removeLuggage(luggageList);
+                return;
+            }
+
+            TextInputDialog widthDialog = new TextInputDialog();
+            widthDialog.setHeaderText("Enter Width (cm) for luggage " + (j + 1));
+            String widthStr = widthDialog.showAndWait().orElse("");
+            double width;
+            try {
+                width = Double.parseDouble(widthStr);
+                if (width < 0 || width > 45) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum width of the luggage is 45 cm.");
+                    flightPlanner.removeLuggage(luggageList);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Error", "Invalid width number.");
+                flightPlanner.removeLuggage(luggageList);
+                return;
+            }
+
+            TextInputDialog heightDialog = new TextInputDialog();
+            heightDialog.setHeaderText("Enter Height (cm) for luggage " + (j + 1));
+            String heightStr = heightDialog.showAndWait().orElse("");
+            double height;
+            try {
+                height = Double.parseDouble(heightStr);
+                if (height < 0 || height > 25) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum height of the luggage is 25 cm.");
+                    flightPlanner.removeLuggage(luggageList);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Error", "Invalid height number.");
+                flightPlanner.removeLuggage(luggageList);
+                return;
+            }
+
+            TextInputDialog weightDialog = new TextInputDialog();
+            weightDialog.setHeaderText("Enter Weight (kg) for luggage " + (j + 1));
+            String weightString = weightDialog.showAndWait().orElse("");
+            double weight;
+            try {
+                weight = Double.parseDouble(weightString);
+                if (weight < 0 || weight > 10) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum weight of the luggage is 10 kg.");
+                    flightPlanner.removeLuggage(luggageList);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Error", "Invalid weight number.");
+                flightPlanner.removeLuggage(luggageList);
+                return;
+            }
+
+            double luggageCost = flightPlanner.calculateLuggageCost(classType, ticket.getFlightNumber(), "cabin", length, width, height, weight, ticket.getCabinLuggageCount() + j + 1, 0);
+
+            totalLuggagePrice += luggageCost;
+            Luggage luggage = new Luggage(UUID.randomUUID().toString(), weight, "cabin", luggageCost, length, width, height, ticketNumber);
+            ticket.getLuggageList().add(luggage);
+            luggageList.add(luggage);
+            flightPlanner.addLuggage(luggage);
+        }
+
+        TextInputDialog numberOfHoldLuggageDialog = new TextInputDialog();
+        numberOfHoldLuggageDialog.setTitle("Hold Luggage Registration");
+        numberOfHoldLuggageDialog.setHeaderText("How many hold bags do you want to register for " + ticket.getPassengerName() + "?");
+        String numberOfHoldLuggageStr = numberOfHoldLuggageDialog.showAndWait().orElse("");
+        int numberOfHoldLuggage;
+        try {
+            numberOfHoldLuggage = Integer.parseInt(numberOfHoldLuggageStr);
+            if (numberOfHoldLuggage < 0 || numberOfHoldLuggage > possibleHoldLuggageCount) {
+                showAlert(Alert.AlertType.ERROR, "Invalid Hold Luggage Number", "You can only add " + possibleHoldLuggageCount + " more hold luggage !");
+                flightPlanner.removeLuggage(luggageList);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter a valid number between 0 and 3.");
+            flightPlanner.removeLuggage(luggageList);
+            return;
+        }
+
+        for (int j = 0; j < numberOfHoldLuggage; j++) {
+            TextInputDialog lengthDialog = new TextInputDialog();
+            lengthDialog.setHeaderText("Enter Length (cm) for luggage " + (j + 1));
+            String lengthStr = lengthDialog.showAndWait().orElse("");
+            double length;
+            try {
+                length = Double.parseDouble(lengthStr);
+                if (length < 0 || length > 105) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum length of the luggage is 105 cm.");
+                    flightPlanner.removeLuggage(luggageList);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Input Error", "Invalid length number.");
+                flightPlanner.removeLuggage(luggageList);
+                return;
+            }
+
+            TextInputDialog widthDialog = new TextInputDialog();
+            widthDialog.setHeaderText("Enter Width (cm) for luggage " + (j + 1));
+            String widthStr = widthDialog.showAndWait().orElse("");
+            double width;
+            try {
+                width = Double.parseDouble(widthStr);
+                if (width < 0 || width > 70) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum width of the luggage is 70 cm.");
+                    flightPlanner.removeLuggage(luggageList);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Error", "Invalid width number.");
+                flightPlanner.removeLuggage(luggageList);
+                return;
+            }
+
+            TextInputDialog heightDialog = new TextInputDialog();
+            heightDialog.setHeaderText("Enter Height (cm) for luggage " + j + 1);
+            String heightStr = heightDialog.showAndWait().orElse("");
+            double height;
+            try {
+                height = Double.parseDouble(heightStr);
+                if (height < 0 || height > 40) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum height of the luggage is 40.");
+                    flightPlanner.removeLuggage(luggageList);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Error", "Invalid height number.");
+                flightPlanner.removeLuggage(luggageList);
+                return;
+            }
+
+            TextInputDialog weightDialog = new TextInputDialog();
+            weightDialog.setHeaderText("Enter Weight (kg) for luggage " + (j + 1));
+            String weightString = weightDialog.showAndWait().orElse("");
+            double weight;
+            try {
+                weight = Double.parseDouble(weightString);
+                if (weight < 0 || weight > 34) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum weight of the luggage is 34 kg.");
+                    flightPlanner.removeLuggage(luggageList);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Error", "Invalid weight number.");
+                flightPlanner.removeLuggage(luggageList);
+                return;
+            }
+
+            double luggageCost = flightPlanner.calculateLuggageCost(classType, ticket.getFlightNumber(), "hold", length, width, height, weight, 0, ticket.getHoldLuggageCount() + j + 1);
+
+            totalLuggagePrice += luggageCost;
+            Luggage luggage = new Luggage(UUID.randomUUID().toString(), weight, "hold", luggageCost, length, width, height, ticketNumber);
+            luggageList.add(luggage);
+            flightPlanner.addLuggage(luggage);
+        }
+
+        Button payButton = new Button("Pay");
+        double finalTotalLuggagePrice = totalLuggagePrice;
+        payButton.setOnAction(_ -> {
+            Payment newPayAfterChoice = new Payment(UUID.randomUUID().toString(), bookingId, finalTotalLuggagePrice, LocalDateTime.now(), loggedInUser.getPaymentMethod(), loggedInUser.getUsername());
+            try {
+                flightPlanner.addPayment(newPayAfterChoice);
+                flightPlanner.updateTicketPrice(ticketNumber, ticket.getPrice() + finalTotalLuggagePrice);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            showAlert(Alert.AlertType.INFORMATION, "Success", "The total cost for luggage addition is " + finalTotalLuggagePrice + " EUR." +
+                    "\nPayment successful with " + loggedInUser.getPaymentMethod() + "!");
+            showMainAppScreen();
+        });
+
+
+        Button backButton = new Button("Back");
+        backButton.setOnAction(_ -> {
+            try {
+                flightPlanner.removeLuggage(luggageList);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            showAlert(Alert.AlertType.INFORMATION, "Payment Not Completed", "You do not finish the addition or the payment.");
+            showMainAppScreen();
+        });
+
+        vbox.getChildren().addAll(
+                new Label("Your luggage addition is almost done ... "), payButton, backButton
+        );
+
+        Scene scene = new Scene(vbox, 300, 300);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Add Additional Luggage");
+        primaryStage.show();
+    }
+
+
     private void showChangeSeat() throws IOException {
-        VBox layout = new VBox(10);
+        VBox vBox = new VBox(10);
         Label changeSeatLabel = new Label("Change your seat to an equal or higher class type.\nWhen you choose a higher class type, you need to pay the price difference.");
 
         TextInputDialog bookingDialog = new TextInputDialog();
@@ -229,7 +556,7 @@ public class FlightPlannerApp extends Application {
         if (bookingId.isEmpty()) {
             showAlert(Alert.AlertType.ERROR, "Input Error", "Enter the booking Id to proceed.");
             return;
-        } else if (!flightPlanner.checkBookingExistence(bookingId)) {
+        } else if (flightPlanner.checkBookingNotExistence(bookingId)) {
             showAlert(Alert.AlertType.ERROR, "Input Error", "Booking Id " + bookingId + " not found.");
             return;
         }
@@ -251,6 +578,21 @@ public class FlightPlannerApp extends Application {
             return;
         }
 
+        List<Booking> bookings = flightPlanner.getBookingsForPassenger(authManager.getLoggedInUser());
+        boolean ticketFound = false;
+
+        for (Booking booking : bookings) {
+            if (booking.getTickets().contains(ticket)) {
+                ticketFound = true;
+                break;
+            }
+        }
+
+        if (!ticketFound) {
+            showAlert(Alert.AlertType.ERROR, "Invalid Access", "You cannot change seat for a booking not booked by you!");
+            return;
+        }
+
         String flightNumber = ticket.getFlightNumber();
         String currentSeatNumber = ticket.getSeatNumber();
         String currentClass = flightPlanner.getSeatClass(currentSeatNumber, flightNumber);
@@ -267,7 +609,7 @@ public class FlightPlannerApp extends Application {
             seatOptions.add("Seat: " + entry.getKey() + " (" + entry.getValue() + ")");
         }
 
-        ChoiceDialog<String> seatDialog = new ChoiceDialog<>(seatOptions.get(0), seatOptions);
+        ChoiceDialog<String> seatDialog = new ChoiceDialog<>(seatOptions.getFirst(), seatOptions);
         seatDialog.setHeaderText("Choose seat for ticket " + ticketNumber);
         Optional<String> selectedSeatOption = seatDialog.showAndWait();
 
@@ -307,7 +649,7 @@ public class FlightPlannerApp extends Application {
                 // Stessa classe, nessun pagamento aggiuntivo
                 try {
                     flightPlanner.releaseSeat(flightNumber, currentSeatNumber);
-                    flightPlanner.updateTicket(ticket.getTicketNumber(), selectedSeat, newSeatPrice);
+                    flightPlanner.updateTicketSeatPrice(ticket.getTicketNumber(), selectedSeat, newSeatPrice);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -323,7 +665,7 @@ public class FlightPlannerApp extends Application {
                 try {
                     flightPlanner.releaseSeat(ticket.getFlightNumber(), ticket.getSeatNumber());
                     flightPlanner.addPayment(newPay);
-                    flightPlanner.updateTicket(ticket.getTicketNumber(), selectedSeat, newSeatPrice);
+                    flightPlanner.updateTicketSeatPrice(ticket.getTicketNumber(), selectedSeat, newSeatPrice);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -334,6 +676,16 @@ public class FlightPlannerApp extends Application {
             }
             showMainAppScreen();
         });
+        Button cancelButton = getCancelButton(ticket, currentBookingSeats);
+
+        vBox.getChildren().addAll(changeSeatLabel, changeSeatAndPayButton, cancelButton);
+
+        Scene scene = new Scene(vBox, 440, 200);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    private Button getCancelButton(Ticket ticket, Map<String, String> currentBookingSeats) {
         Button cancelButton = new Button("Cancel Changing");
         cancelButton.setOnAction(_ -> {
             try {
@@ -344,12 +696,7 @@ public class FlightPlannerApp extends Application {
             showAlert(Alert.AlertType.ERROR, "Cancelled", "You didn't finish your modification or payment. Your changing has been cancelled.");
             showMainAppScreen();
         });
-
-        layout.getChildren().addAll(changeSeatLabel, changeSeatAndPayButton, cancelButton);
-
-        Scene scene = new Scene(layout, 440, 200);
-        primaryStage.setScene(scene);
-        primaryStage.show();
+        return cancelButton;
     }
 
     private void showUpdateCredentials() {
@@ -414,7 +761,6 @@ public class FlightPlannerApp extends Application {
 
             if (newPassword.isEmpty() && confirmPassword.isEmpty()) {
                 newPassword = authManager.getLoggedInUserPassword();
-                ;
                 confirmPassword = newPassword;
             }
 
@@ -462,7 +808,8 @@ public class FlightPlannerApp extends Application {
         GridPane.setConstraints(backButton, 1, 4);
         backButton.setOnAction(_ -> showMainAppScreen());
 
-        grid.getChildren().addAll(emailLabel, emailInput, oldPasswordLabel, oldPasswordInput, newPasswordLabel, newPasswordInput, confirmPasswordLabel, confirmPasswordInput, backButton, updateButton);
+        grid.getChildren().addAll(emailLabel, emailInput, oldPasswordLabel, oldPasswordInput, newPasswordLabel, newPasswordInput,
+                confirmPasswordLabel, confirmPasswordInput, backButton, updateButton);
 
         Scene scene = new Scene(grid, 450, 200);
         primaryStage.setScene(scene);
@@ -491,7 +838,7 @@ public class FlightPlannerApp extends Application {
         if (bookingId.isEmpty()) {
             showAlert(Alert.AlertType.ERROR, "Error", "Please enter a bookingId to proceed.");
             return;
-        } else if (!flightPlanner.checkBookingExistence(bookingId)) {
+        } else if (flightPlanner.checkBookingNotExistence(bookingId)) {
             showAlert(Alert.AlertType.ERROR, "Error", "Booking Id " + bookingId + " not found.");
             return;
         }
@@ -512,23 +859,49 @@ public class FlightPlannerApp extends Application {
             return;
         }
 
-        double refundAmount = ticket.getPrice() * 0.40;
+        List<Booking> bookings = flightPlanner.getBookingsForPassenger(authManager.getLoggedInUser());
+        boolean ticketFound = false;
 
-        try {
-            flightPlanner.cancelTicket(bookingId, ticket);
-            Alert successesAlert = new Alert(Alert.AlertType.INFORMATION);
-            successesAlert.setTitle("Success");
-            successesAlert.setHeaderText(null);
-            successesAlert.setContentText("You cancelled the ticket " + ticketNumber + " in booking " + bookingId);
-            successesAlert.showAndWait();
+        for (Booking booking : bookings) {
+            if (booking.getTickets().contains(ticket)) {
+                ticketFound = true;
+                break;
+            }
+        }
 
-            Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);// Aspetta che il precedente alert venga chiuso
-            infoAlert.setTitle("Important Information");
-            infoAlert.setHeaderText("Don't worry for your refund!");
-            infoAlert.setContentText("Refund of 40% (" + refundAmount + "EUR) for ticket " + ticketNumber + " has been proceed automatically.");
-            infoAlert.showAndWait();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+        if (!ticketFound) {
+            showAlert(Alert.AlertType.ERROR, "Invalid Access", "You cannot cancel ticket for a booking not booked by you!");
+            return;
+        }
+
+        double luggagePrice = 0;
+        for (Luggage luggage : ticket.getLuggageList()) {
+            luggagePrice += luggage.getCost();
+        }
+        double refundAmount = (ticket.getPrice() - luggagePrice) * 0.40;
+        LocalDateTime currentTime = LocalDateTime.now();
+        boolean isWithin24HoursOfBooking = flightPlanner.isWithin24HoursOfBooking(bookingId, currentTime);
+        boolean isAtLeast7DaysBeforeFlight = flightPlanner.isAtLeast7DaysBeforeFlight(bookingId, currentTime);
+
+        if (isWithin24HoursOfBooking || isAtLeast7DaysBeforeFlight) {
+            try {
+                flightPlanner.cancelTicket(bookingId, ticket);
+                Alert successesAlert = new Alert(Alert.AlertType.INFORMATION);
+                successesAlert.setTitle("Success");
+                successesAlert.setHeaderText(null);
+                successesAlert.setContentText("You cancelled the ticket " + ticketNumber + " in booking " + bookingId);
+                successesAlert.showAndWait();
+
+                Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);// Aspetta che il precedente alert venga chiuso
+                infoAlert.setTitle("Important Information");
+                infoAlert.setHeaderText("Don't worry for your refund!");
+                infoAlert.setContentText("Refund of 40% (" + refundAmount + "EUR excluding luggage cost) for ticket " + ticketNumber + " has been processed automatically.");
+                infoAlert.showAndWait();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Cancellation Not Allowed", "You can only cancel a ticket within 24 hours of purchase or 7 days before flight departure.");
         }
     }
 
@@ -540,32 +913,58 @@ public class FlightPlannerApp extends Application {
         if (bookingId.isEmpty()) {
             showAlert(Alert.AlertType.ERROR, "Error", "Enter the booking Id to proceed.");
             return;
-        } else if (!flightPlanner.checkBookingExistence(bookingId)) {
+        } else if (flightPlanner.checkBookingNotExistence(bookingId)) {
             showAlert(Alert.AlertType.ERROR, "Error", "Booking Id " + bookingId + " not found.");
             return;
         }
 
         Passenger passenger = flightPlanner.getPassenger(authManager.getLoggedInUser());
 
-        Booking booking = flightPlanner.getBookingById(bookingId);
-        double refundAmount = booking.getTotalAmount() * 0.40;
+        Booking booking = flightPlanner.findBooking(bookingId);
 
-        try {
-            flightPlanner.cancelBooking(bookingId, passenger);
-            //showAlert(Alert.AlertType.INFORMATION, "Success", "You cancelled the booking " + bookingId);
-            Alert successesAlert = new Alert(Alert.AlertType.INFORMATION);
-            successesAlert.setTitle("Success");
-            successesAlert.setHeaderText(null);
-            successesAlert.setContentText("You cancelled the booking " + bookingId);
-            successesAlert.showAndWait();
+        List<Booking> bookings = flightPlanner.getBookingsForPassenger(authManager.getLoggedInUser());
+        boolean bookingFound = bookings.contains(booking);
 
-            Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);
-            infoAlert.setTitle("Important Information");
-            infoAlert.setHeaderText("Don't worry for your refund!");
-            infoAlert.setContentText("Refund of 40% (" + refundAmount + "EUR) for booking " + bookingId + " has been proceed automatically.");
-            infoAlert.showAndWait();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+
+        if (!bookingFound) {
+            showAlert(Alert.AlertType.ERROR, "Invalid Access", "You cannot cancel a booking not booked by you!");
+            return;
+        }
+
+        double refundAmount = 0;
+        double luggagePrice = 0;
+
+        for (Ticket ticket : booking.getTickets()) {
+            for (Luggage luggage : ticket.getLuggageList()) {
+                luggagePrice += luggage.getCost();
+            }
+            refundAmount += (ticket.getPrice() - luggagePrice) * 0.40;
+        }
+
+        LocalDateTime currentTime = LocalDateTime.now();
+        boolean isWithin24HoursOfBooking = flightPlanner.isWithin24HoursOfBooking(bookingId, currentTime);
+        boolean isAtLeast7DaysBeforeFlight = flightPlanner.isAtLeast7DaysBeforeFlight(bookingId, currentTime);
+
+        if (isWithin24HoursOfBooking || isAtLeast7DaysBeforeFlight) {
+            try {
+                flightPlanner.cancelBooking(bookingId, passenger);
+                Alert successesAlert = new Alert(Alert.AlertType.INFORMATION);
+                successesAlert.setTitle("Success");
+                successesAlert.setHeaderText(null);
+                successesAlert.setContentText("You cancelled the booking " + bookingId);
+                successesAlert.showAndWait();
+
+                Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);
+                infoAlert.setTitle("Important Information");
+                infoAlert.setHeaderText("Don't worry for your refund!");
+                infoAlert.setContentText("Refund of 40% (" + refundAmount + "EUR excluding luggage cost) for booking " + bookingId + " has been processed automatically.");
+                System.out.println("Refund of 40% (" + refundAmount + " EUR excluding luggage cost) for booking " + bookingId + " has been processed.");
+                infoAlert.showAndWait();
+            } catch (IOException ex) {
+                showAlert(Alert.AlertType.ERROR, "Cancellation Failure", "An error occurred while the booking was being canceled");
+            }
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Cancellation Not Allowed", "You can only cancel a booking within 24 hours of purchase or 7 days before flight departure.");
         }
     }
 
@@ -579,7 +978,7 @@ public class FlightPlannerApp extends Application {
         if (flightNumber.isEmpty()) {
             showAlert(Alert.AlertType.ERROR, "Error", "Flight number is required.");
             return;
-        } else if (!flightPlanner.checkFlightExistence(flightNumber)) {
+        } else if (flightPlanner.checkFlightNotExistence(flightNumber)) {
             showAlert(Alert.AlertType.ERROR, "Error", "Flight number " + flightNumber + " not found !");
             return;
         }
@@ -591,26 +990,72 @@ public class FlightPlannerApp extends Application {
             return;
         }
 
-        if (mainPassenger.isRegisteredForFlight(flightPlanner.findFlight(flightNumber))) {
-            showAlert(Alert.AlertType.ERROR, "Duplicate Booking", "You have already a booking for flight " + flightNumber);
-            return;
-        }
-
         // se l'utente in precedenza aveva già effettuato delle prenotazioni, il suo nome e cognome vengono recuperati per default
         TextInputDialog firstNameDialog = new TextInputDialog(mainPassenger.getName().isEmpty() ? "" : mainPassenger.getName());
         firstNameDialog.setHeaderText("Enter Main Passenger First Name");
         String firstName = firstNameDialog.showAndWait().orElse("");
 
+        if (firstName.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Error", "Passenger first name is required.");
+            return;
+        }
+
         TextInputDialog lastNameDialog = new TextInputDialog(mainPassenger.getSurname().isEmpty() ? "" : mainPassenger.getSurname());
         lastNameDialog.setHeaderText("Enter Main Passenger Last Name");
         String lastName = lastNameDialog.showAndWait().orElse("");
 
-        if (firstName.isEmpty() || lastName.isEmpty()) {
-            showAlert(Alert.AlertType.ERROR, "Error", "Passenger first name and last name are required.");
+        if (lastName.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Error", "Passenger last name is required.");
             return;
         }
         mainPassenger.setName(firstName);
         mainPassenger.setSurname(lastName);
+
+        showAlert(Alert.AlertType.INFORMATION, "Important Notification",
+                """
+                        If you are booking for an international flight, you must provide passport as document.
+                        In other case you can choose to provide your Id card as document.""");
+
+        TextInputDialog documentTypeDialog = new TextInputDialog(mainPassenger.getDocumentType().isEmpty() ? "" : mainPassenger.getDocumentType());
+        documentTypeDialog.setHeaderText("Which document type do you want to use for your booking?");
+        documentTypeDialog.setContentText("Enter PASSPORT/ID CARD:");
+        String documentType = documentTypeDialog.showAndWait().orElse("");
+
+        if (documentType.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "The document type is required.");
+            return;
+        }
+
+        if (!documentType.equals("PASSPORT") && !documentType.equals("ID CARD")) {
+            showAlert(Alert.AlertType.ERROR, "Invalid Input", "Please enter a valid format of document type: PASSPORT or ID CARD.");
+            return;
+        }
+
+        TextInputDialog documentIdDialog = new TextInputDialog();
+        documentIdDialog.setHeaderText("Enter your document ID.");
+        String documentId = documentIdDialog.showAndWait().orElse("");
+
+        if (documentId.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Input Error", "The document ID is required.");
+            return;
+        }
+
+        if (documentId.length() != 9) {
+            showAlert(Alert.AlertType.ERROR, "Invalid Input", "The document ID must be exactly 9 characters long.");
+            return;
+        }
+
+        mainPassenger.setDocumentType(documentType);
+        mainPassenger.setDocumentId(documentId);
+
+        if (flightPlanner.checkDuplicatePassenger(firstName, lastName, documentType, documentId)) {
+            flightPlanner.removeDuplicatePassenger(mainPassenger.getUsername(), firstName, lastName, documentType, documentId);
+        }
+
+        if (mainPassenger.isRegisteredForFlight(flightPlanner.findFlight(flightNumber))) {
+            showAlert(Alert.AlertType.ERROR, "Duplicate Booking", "You have already a booking for the flight " + flightNumber);
+            return;
+        }
 
         // Dialogo per numero di biglietti
         TextInputDialog ticketCountDialog = new TextInputDialog();
@@ -622,12 +1067,12 @@ public class FlightPlannerApp extends Application {
             ticketCount = Integer.parseInt(ticketCountStr);
 
             if (ticketCount <= 0) {
-                showAlert(Alert.AlertType.ERROR, "Error", "You must choose a number greater than 0.");
+                showAlert(Alert.AlertType.ERROR, "Input Error", "You must choose a number greater than 0.");
                 return;
             }
 
         } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.ERROR, "Error", "Invalid ticket number.");
+            showAlert(Alert.AlertType.ERROR, "Invalid Input", "Invalid ticket number.");
             return;
         }
 
@@ -635,8 +1080,13 @@ public class FlightPlannerApp extends Application {
         Map<String, String> availableSeats = flightPlanner.getAvailableSeatsWithClass(flightNumber);
 
         // Se non ci sono posti disponibili
-        if (availableSeats.isEmpty()) {
-            showAlert(Alert.AlertType.ERROR, "Error", "No available seats for this flight.");
+//        //if (availableSeats.isEmpty()) {
+//            showAlert(Alert.AlertType.ERROR, "Error", "No available seats for this flight.");
+//           return;
+//        }
+
+        if (availableSeats.size() < ticketCount) {
+            showAlert(Alert.AlertType.ERROR, "Error", "No enough available seats for this flight as you requested.");
             return;
         }
 
@@ -649,29 +1099,120 @@ public class FlightPlannerApp extends Application {
         String bookingId = UUID.randomUUID().toString();
 
         double totalPrice = 0;
+        List<Luggage> allLuggage = new ArrayList<>();
+        List<Passenger> additionalPassengers = new ArrayList<>();
 
         // Ciclo per ogni biglietto da creare
         for (int i = 0; i < ticketCount; i++) {
             // Si chiede nome e cognome per ogni passeggero
             String passengerName;
             String passengerLastName;
+            String passengerDocumentType;
+            String passengerDocumentId;
 
             // Se è il primo biglietto, usa il nome del main passenger
             if (i == 0) {
                 passengerName = firstName;  // Nome principale (main passenger)
                 passengerLastName = lastName; // Cognome principale (main passenger)
+                passengerDocumentType = documentType;
+                passengerDocumentId = documentId;
             } else {
                 TextInputDialog additionalFirstNameDialog = new TextInputDialog();
                 additionalFirstNameDialog.setHeaderText("Enter First Name for Passenger " + (i + 1));
                 passengerName = additionalFirstNameDialog.showAndWait().orElse("");
 
+                if (passengerName.isEmpty()) {
+                    showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter the name of the passenger.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
                 TextInputDialog additionalLastNameDialog = new TextInputDialog();
                 additionalLastNameDialog.setHeaderText("Enter Last Name for Passenger " + (i + 1));
                 passengerLastName = additionalLastNameDialog.showAndWait().orElse("");
 
-                Passenger additionalPassenger = new Passenger("not defined", passengerName, passengerLastName, authManager.getLoggedInUserEmail(), "", "", new HashSet<>(), new ArrayList<>(), null);
-                if (!flightPlanner.checkPassengerExistence(additionalPassenger))
-                    flightPlanner.registerPassenger(additionalPassenger);
+                if (passengerLastName.isEmpty()) {
+                    showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter the surname of the passenger.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                TextInputDialog additionalDocumentTypeDialog = new TextInputDialog("ID CARD");
+                additionalDocumentTypeDialog.setHeaderText("Which document type do you want to use for your booking?");
+                additionalDocumentTypeDialog.setContentText("Enter PASSPORT/ID CARD:");
+                String additionalDocumentType = additionalDocumentTypeDialog.showAndWait().orElse("");
+
+                if (additionalDocumentType.isEmpty()) {
+                    showAlert(Alert.AlertType.ERROR, "Input Error", "The document type is required.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                if (!additionalDocumentType.equals("PASSPORT") && !additionalDocumentType.equals("ID CARD")) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid Input", "Please enter a valid format.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                TextInputDialog additionalDocumentIdDialog = new TextInputDialog();
+                additionalDocumentIdDialog.setHeaderText("Enter your document ID.");
+                String additionalDocumentId = additionalDocumentIdDialog.showAndWait().orElse("");
+
+                if (additionalDocumentId.isEmpty()) {
+                    showAlert(Alert.AlertType.ERROR, "Input Error", "The document ID is required.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                if (additionalDocumentId.length() != 9) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid Input", "The document ID must be exactly 9 characters long.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                Passenger additionalPassenger = flightPlanner.getPassengerByFullNameAndDocument(passengerName, passengerLastName, additionalDocumentType, additionalDocumentId);
+
+                if (additionalPassenger != null) {
+                    if (flightPlanner.checkDuplicatePassenger(passengerName, passengerLastName, additionalDocumentType, additionalDocumentId)) {
+                        flightPlanner.removeDuplicatePassenger(additionalPassenger.getUsername(), additionalPassenger.getName(),
+                                additionalPassenger.getSurname(), additionalPassenger.getDocumentType(), additionalPassenger.getDocumentId());
+                    }
+                } else {
+                    additionalPassenger = new Passenger("not defined", passengerName, passengerLastName, authManager.getLoggedInUserEmail(),
+                            "", "", new HashSet<>(), new ArrayList<>(), null, additionalDocumentType, additionalDocumentId);
+
+                    if (!flightPlanner.checkPassengerExistence(additionalPassenger)) {
+                        flightPlanner.registerPassenger(additionalPassenger);
+                    } else {
+                        additionalPassenger.setDocumentType(additionalDocumentType);
+                        additionalPassenger.setDocumentId(additionalDocumentId);
+                        flightPlanner.updatePassenger(additionalPassenger);
+                    }
+                }
+
+                if (additionalPassenger.isRegisteredForFlight(flightPlanner.findFlight(flightNumber))) {
+                    showAlert(Alert.AlertType.ERROR, "Duplicate Booking", "This passenger has already a booking for flight " + flightNumber);
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                passengerDocumentId = additionalDocumentId;
+                passengerDocumentType = additionalDocumentType;
+                additionalPassengers.add(additionalPassenger);
             }
             // Si presenta una lista di posti con il tipo di classe accanto
             List<String> seatOptions = new ArrayList<>();
@@ -681,10 +1222,13 @@ public class FlightPlannerApp extends Application {
 
             if (seatOptions.isEmpty()) {
                 showAlert(Alert.AlertType.ERROR, "Error", "No available seat options.");
+                flightPlanner.cancelCurrentTickets(tickets);
+                flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                flightPlanner.removeLuggage(allLuggage);
                 return;
             }
 
-            ChoiceDialog<String> seatDialog = new ChoiceDialog<>(seatOptions.get(0), seatOptions);
+            ChoiceDialog<String> seatDialog = new ChoiceDialog<>(seatOptions.getFirst(), seatOptions);
             seatDialog.setHeaderText("Choose seat for ticket " + (i + 1));
             Optional<String> selectedSeatOption = seatDialog.showAndWait();
 
@@ -701,7 +1245,9 @@ public class FlightPlannerApp extends Application {
 
             } else {
                 // Se l'utente chiude la finestra senza scegliere nulla, fallisce la prenotazione
+                flightPlanner.cancelCurrentTickets(tickets);
                 flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                flightPlanner.removeLuggage(allLuggage);
                 showAlert(Alert.AlertType.ERROR, "Error", "You closed the seat selection. Booking has been cancelled.");
                 return; // Prenotazione fallita
             }
@@ -710,17 +1256,273 @@ public class FlightPlannerApp extends Application {
             double pricePerTicket;
             try {
                 pricePerTicket = flightPlanner.getPrice(flightNumber, selectedClassType);
-                System.out.println("The ticket price for " + selectedSeat + " " + selectedClassType + " of flight " + flightNumber + " is " + pricePerTicket + " EUR.");
             } catch (Exception e) {
                 showAlert(Alert.AlertType.ERROR, "Error", "Unable to retrieve price for the selected seat " + selectedSeat + " and class type " + selectedClassType + ". ");
+                flightPlanner.cancelCurrentTickets(tickets);
+                flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                flightPlanner.removeLuggage(allLuggage);
                 return;
             }
             totalPrice += pricePerTicket;
             // Si genera un numero di biglietto unico
             String ticketNumber = UUID.randomUUID().toString();
+            List<Luggage> luggageList = new ArrayList<>();
+            double totalLuggagePrice = 0;
+
+            showAlert(Alert.AlertType.INFORMATION, "Luggage Information",
+                    """
+                            Standard luggage sizes:
+                            - Cabin Luggage: ONE FREE for all passengers (Max Size: 40x30x20 cm)
+                            - Hold Luggage: ONE FREE for flights longer than 6 hours
+                                  - Economy Max Size 50x40x20 cm and Max Weight 23 kg
+                                  - Business Max Size 60x50x25 cm and Max Weight 32 kg
+                                  - First Max Size 70x60x30 and Max Weight 34 kg
+                            Note:
+                            -For exceeding luggage dimensions, you need to pay an extra cost of 50 EUR.
+                            -For every kg of luggage weight exceeding, you need to pay an extra of 50 EUR.
+                            -For each additional cabin/hold luggage, you need to pay an extra of 100 EUR.""");
+
+            TextInputDialog numberOfCabinLuggageDialog = new TextInputDialog();
+            numberOfCabinLuggageDialog.setTitle("Cabin Luggage Registration");
+            numberOfCabinLuggageDialog.setHeaderText("How many cabin bags do you want to register for " + passengerName + "?");
+            numberOfCabinLuggageDialog.setContentText("Enter a number (0-2):");
+            String numberOfCabinLuggageStr = numberOfCabinLuggageDialog.showAndWait().orElse("");
+            int numberOfCabinLuggage;
+            try {
+                numberOfCabinLuggage = Integer.parseInt(numberOfCabinLuggageStr);
+                if (numberOfCabinLuggage < 0 || numberOfCabinLuggage > 2) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid Cabin Luggage Number", "You cannot register more than two cabin luggage !");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter a valid number between 0 and 2.");
+                flightPlanner.cancelCurrentTickets(tickets);
+                flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                flightPlanner.removeLuggage(allLuggage);
+                return;
+            }
+
+            for (int j = 0; j < numberOfCabinLuggage; j++) {
+                TextInputDialog lengthDialog = new TextInputDialog();
+                lengthDialog.setHeaderText("Enter Length (cm) for luggage " + (j + 1));
+                String lengthStr = lengthDialog.showAndWait().orElse("");
+                double length;
+                try {
+                    length = Double.parseDouble(lengthStr);
+                    if (length < 0 || length > 55) {
+                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum length of the luggage is 55 cm.");
+                        flightPlanner.cancelCurrentTickets(tickets);
+                        flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                        flightPlanner.removeLuggage(allLuggage);
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Invalid length number.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                TextInputDialog widthDialog = new TextInputDialog();
+                widthDialog.setHeaderText("Enter Width (cm) for luggage " + (j + 1));
+                String widthStr = widthDialog.showAndWait().orElse("");
+                double width;
+                try {
+                    width = Double.parseDouble(widthStr);
+                    if (width < 0 || width > 45) {
+                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum width of the luggage is 45 cm.");
+                        flightPlanner.cancelCurrentTickets(tickets);
+                        flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                        flightPlanner.removeLuggage(allLuggage);
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Invalid width number.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                TextInputDialog heightDialog = new TextInputDialog();
+                heightDialog.setHeaderText("Enter Height (cm) for luggage " + (j + 1));
+                String heightStr = heightDialog.showAndWait().orElse("");
+                double height;
+                try {
+                    height = Double.parseDouble(heightStr);
+                    if (height < 0 || height > 25) {
+                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum height of the luggage is 25 cm.");
+                        flightPlanner.cancelCurrentTickets(tickets);
+                        flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                        flightPlanner.removeLuggage(allLuggage);
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Invalid height number.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                TextInputDialog weightDialog = new TextInputDialog();
+                weightDialog.setHeaderText("Enter Weight (kg) for luggage " + (j + 1));
+                String weightString = weightDialog.showAndWait().orElse("");
+                double weight;
+                try {
+                    weight = Double.parseDouble(weightString);
+                    if (weight < 0 || weight > 10) {
+                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum weight of the luggage is 10 kg.");
+                        flightPlanner.cancelCurrentTickets(tickets);
+                        flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                        flightPlanner.removeLuggage(allLuggage);
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Invalid weight number.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                double luggageCost = flightPlanner.calculateLuggageCost(selectedClassType, flightNumber, "cabin", length, width, height, weight, j + 1, 0);
+
+                totalLuggagePrice += luggageCost;
+                Luggage luggage = new Luggage(UUID.randomUUID().toString(), weight, "cabin", luggageCost, length, width, height, ticketNumber);
+                luggageList.add(luggage);
+                allLuggage.add(luggage);
+                flightPlanner.addLuggage(luggage);
+            }
+
+            TextInputDialog numberOfHoldLuggageDialog = new TextInputDialog();
+            numberOfHoldLuggageDialog.setTitle("Hold Luggage Registration");
+            numberOfHoldLuggageDialog.setHeaderText("How many hold bags do you want to register for " + passengerName + "?");
+            numberOfHoldLuggageDialog.setContentText("Enter a number (0-3):");
+            String numberOfHoldLuggageStr = numberOfHoldLuggageDialog.showAndWait().orElse("");
+            int numberOfHoldLuggage;
+            try {
+                numberOfHoldLuggage = Integer.parseInt(numberOfHoldLuggageStr);
+                if (numberOfHoldLuggage < 0 || numberOfHoldLuggage > 3) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid Hold Luggage Number", "You cannot register more than three hold luggage !");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter a valid number between 0 and 3.");
+                flightPlanner.cancelCurrentTickets(tickets);
+                flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                flightPlanner.removeLuggage(allLuggage);
+                return;
+            }
+
+            for (int j = 0; j < numberOfHoldLuggage; j++) {
+                TextInputDialog lengthDialog = new TextInputDialog();
+                lengthDialog.setHeaderText("Enter Length (cm) for luggage " + (j + 1));
+                String lengthStr = lengthDialog.showAndWait().orElse("");
+                double length;
+                try {
+                    length = Double.parseDouble(lengthStr);
+                    if (length < 0 || length > 105) {
+                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum length of the luggage is 105 cm.");
+                        flightPlanner.cancelCurrentTickets(tickets);
+                        flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                        flightPlanner.removeLuggage(allLuggage);
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    showAlert(Alert.AlertType.ERROR, "Input Error", "Invalid length number.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                TextInputDialog widthDialog = new TextInputDialog();
+                widthDialog.setHeaderText("Enter Width (cm) for luggage " + (j + 1));
+                String widthStr = widthDialog.showAndWait().orElse("");
+                double width;
+                try {
+                    width = Double.parseDouble(widthStr);
+                    if (width < 0 || width > 70) {
+                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum width of the luggage is 70 cm.");
+                        flightPlanner.cancelCurrentTickets(tickets);
+                        flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                        flightPlanner.removeLuggage(allLuggage);
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Invalid width number.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                TextInputDialog heightDialog = new TextInputDialog();
+                heightDialog.setHeaderText("Enter Height (cm) for luggage " + j + 1);
+                String heightStr = heightDialog.showAndWait().orElse("");
+                double height;
+                try {
+                    height = Double.parseDouble(heightStr);
+                    if (height < 0 || height > 40) {
+                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum height of the luggage is 40 cm.");
+                        flightPlanner.cancelCurrentTickets(tickets);
+                        flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                        flightPlanner.removeLuggage(allLuggage);
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Invalid height number.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                TextInputDialog weightDialog = new TextInputDialog();
+                weightDialog.setHeaderText("Enter Weight (kg) for luggage " + (j + 1));
+                String weightString = weightDialog.showAndWait().orElse("");
+                double weight;
+                try {
+                    weight = Double.parseDouble(weightString);
+                    if (weight < 0 || weight > 34) {
+                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum weight of the luggage is 34 kg.");
+                        flightPlanner.cancelCurrentTickets(tickets);
+                        flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                        flightPlanner.removeLuggage(allLuggage);
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    showAlert(Alert.AlertType.ERROR, "Error", "Invalid weight number.");
+                    flightPlanner.cancelCurrentTickets(tickets);
+                    flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+                    flightPlanner.removeLuggage(allLuggage);
+                    return;
+                }
+
+                double luggageCost = flightPlanner.calculateLuggageCost(selectedClassType, flightNumber, "hold", length, width, height, weight, 0, j + 1);
+
+                totalLuggagePrice += luggageCost;
+                Luggage luggage = new Luggage(UUID.randomUUID().toString(), weight, "hold", luggageCost, length, width, height, ticketNumber);
+                luggageList.add(luggage);
+                allLuggage.add(luggage);
+                flightPlanner.addLuggage(luggage);
+            }
+
+            pricePerTicket += totalLuggagePrice;
+            totalPrice += totalLuggagePrice;
 
             // Si crea un nuovo biglietto con i parametri richiesti
-            Ticket ticket = new Ticket(ticketNumber, bookingId, flightNumber, selectedSeat, pricePerTicket, passengerName, passengerLastName);
+            Ticket ticket = new Ticket(ticketNumber, bookingId, flightNumber, selectedSeat, pricePerTicket, passengerName, passengerLastName, luggageList);
+            ticket.setDocumentType(passengerDocumentType);
+            ticket.setDocumentId(passengerDocumentId);
             tickets.add(ticket);
             flightPlanner.addTicket(ticket);
         }
@@ -729,10 +1531,13 @@ public class FlightPlannerApp extends Application {
 
         // Si aggiunge la prenotazione e i biglietti al sistema passando l'ID generato
         try {
-            flightPlanner.bookFlightForPassenger(flightNumber, mainPassenger, tickets, bookingId);
+            flightPlanner.bookFlightForPassenger(flightNumber, mainPassenger, additionalPassengers, tickets, bookingId);
             showAlert(Alert.AlertType.INFORMATION, "Notification", "Flight almost successfully booked!\nTotal Price: " + totalPrice + " EUR");
         } catch (IOException e) {
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to book flight: " + e.getMessage());
+            flightPlanner.cancelCurrentTickets(tickets);
+            flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
+            flightPlanner.removeLuggage(allLuggage);
         }
 
         Label paymentLabel = new Label("Payment Process:");
@@ -748,10 +1553,15 @@ public class FlightPlannerApp extends Application {
                 try {
                     flightPlanner.addPayment(newPay);
                 } catch (IOException ex) {
+                    try {
+                        flightPlanner.cancelBooking(bookingId, mainPassenger);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     throw new RuntimeException(ex);
                 }
                 showMainAppScreen();
-                showAlert(Alert.AlertType.INFORMATION, "Success", " Changing seat has been processed successfully !");
+                showAlert(Alert.AlertType.INFORMATION, "Success", " Payment successful with " + mainPassenger.getPaymentMethod() + "!");
             });
         } else {
             ChoiceDialog<String> paymentMethodDialog = new ChoiceDialog<>("CREDIT_CARD", "DEBIT_CARD", "PAYPAL", "BANK_TRANSFER");
@@ -762,13 +1572,17 @@ public class FlightPlannerApp extends Application {
                 PaymentMethod selectedMethod = PaymentMethod.valueOf(selectedPaymentMethod.get());
                 mainPassenger.setPaymentMethod(selectedMethod);
                 flightPlanner.updatePassenger(mainPassenger);
-                payButton.setDisable(false);
                 double finalTotalPrice1 = totalPrice;
                 payButton.setOnAction(_ -> {
                     Payment newPayAfterChoice = new Payment(paymentId, bookingId, finalTotalPrice1, currentDT, mainPassenger.getPaymentMethod(), mainPassenger.getUsername());
                     try {
                         flightPlanner.addPayment(newPayAfterChoice);
                     } catch (IOException ex) {
+                        try {
+                            flightPlanner.cancelBooking(bookingId, mainPassenger);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                         throw new RuntimeException(ex);
                     }
 
@@ -778,6 +1592,11 @@ public class FlightPlannerApp extends Application {
                 });
             } else {
                 showAlert(Alert.AlertType.ERROR, "Error", "You need to select a payment method to proceed.");
+                try {
+                    flightPlanner.cancelBooking(bookingId, mainPassenger);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 return;
             }
         }
@@ -808,7 +1627,7 @@ public class FlightPlannerApp extends Application {
         departureDialog.setHeaderText("Enter Departure City or Airport Code");
         String departure = departureDialog.showAndWait().orElse("");
 
-        if (!isValidAirportOrCity(departure)) {
+        if (notValidAirportOrCity(departure)) {
             showAlert(Alert.AlertType.ERROR, "Invalid Departure", "Please enter a valid departure city or airport code.");
             return;
         }
@@ -820,7 +1639,7 @@ public class FlightPlannerApp extends Application {
         arrivalDialog.setHeaderText("Enter Arrival City or Airport Code");
         String arrival = arrivalDialog.showAndWait().orElse("");
 
-        if (!isValidAirportOrCity(arrival)) {
+        if (notValidAirportOrCity(arrival)) {
             showAlert(Alert.AlertType.ERROR, "Invalid Arrival", "Please enter a valid arrival city or airport code.");
             return;
         }
@@ -886,10 +1705,10 @@ public class FlightPlannerApp extends Application {
         primaryStage.show();
     }
 
-    private boolean isValidAirportOrCity(String input) {
+    private boolean notValidAirportOrCity(String input) {
         List<Airport> airports = flightPlanner.getAllAirports();
         return airports.stream()
-                .anyMatch(a -> a.getCode().equalsIgnoreCase(input) || a.getCity().equalsIgnoreCase(input));
+                .noneMatch(a -> a.getCode().equalsIgnoreCase(input) || a.getCity().equalsIgnoreCase(input));
     }
 
     private void showViewBookings() {
@@ -915,8 +1734,18 @@ public class FlightPlannerApp extends Application {
                             .append(", Flight Number: ").append(ticket.getFlightNumber())
                             .append(", Seat: ").append(ticket.getSeatNumber())
                             .append(", Passenger: ").append(ticket.getPassengerName())
-                            .append(" ").append(ticket.getPassengerSurname())
-                            .append("\n");
+                            .append(" ").append(ticket.getPassengerSurname()).append("\n");
+
+                    List<Luggage> luggageList = ticket.getLuggageList();
+                    if (luggageList == null || luggageList.isEmpty()) {
+                        bookingsText.append("Luggage: No luggage booked.\n");
+                    } else {
+                        String luggageString = ticket.getLuggageList().toString()
+                                .replace("[", "")
+                                .replace("]", "");
+
+                        bookingsText.append("Luggage: ").append(luggageString).append("\n");
+                    }
                 }
                 bookingsText.append("\n"); // Si aggiunge una riga vuota tra una prenotazione e l'altra
             }
@@ -1149,12 +1978,17 @@ public class FlightPlannerApp extends Application {
                 return;
             }
 
+            if (flightPlanner.checkRouteNotExistence(routeId)) {
+                showAlert(Alert.AlertType.ERROR, "Invalid Route Id", "Route " + routeId + " not found.");
+                return;
+            }
+
             try {
                 flightPlanner.removeRoute(routeId);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Route removed: " + routeId);
                 routeIdField.clear();
             } catch (IOException ex) {
-                showAlert(Alert.AlertType.ERROR, "Error", "Route " + routeId + " not removed. An error occurred while removing the route.");
+                showAlert(Alert.AlertType.ERROR, "Removing Route Failed", "Route " + routeId + " not removed. An error occurred while the route was being removed.");
                 throw new RuntimeException(ex);
             }
 
@@ -1260,11 +2094,16 @@ public class FlightPlannerApp extends Application {
                 return;
             }
 
+            if (flightPlanner.checkAirportNotExistence(code)) {
+                showAlert(Alert.AlertType.ERROR, "Invalid Airport Code", "Airport " + code + " not found.");
+                return;
+            }
+
             try {
                 flightPlanner.removeAirport(code);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Airport " + code + " removed successfully.");
             } catch (IOException ex) {
-                showAlert(Alert.AlertType.ERROR, "Error", "Airport " + code + " not removed.");
+                showAlert(Alert.AlertType.ERROR, "Removing Airport Failed", "Airport " + code + " not removed. An error occurred while tha airport was being removed.");
                 throw new RuntimeException(ex);
             }
 
@@ -1357,7 +2196,7 @@ public class FlightPlannerApp extends Application {
             if (flightNumber.isEmpty() || classType.isEmpty()) {
                 showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter all the fields.");
                 return;
-            } else if (!flightPlanner.checkFlightExistence(flightNumber)) {
+            } else if (flightPlanner.checkFlightNotExistence(flightNumber)) {
                 showAlert(Alert.AlertType.ERROR, "Error", "Flight number " + flightNumber + " not found!");
                 return;
             }
@@ -1375,15 +2214,15 @@ public class FlightPlannerApp extends Application {
                 return;
             }
 
-            // Prima di aggiornare si deve controllare se il volo esiste
-            if (flightPlanner.getFlightClassPrices().containsKey(flightNumber)) {
+            // O si fa aggiornamento dei prezzi per voli esistenti o si caricano nuovi prezzi per i nuovi voli
+            if (flightPlanner.getFlightClassPrices().containsKey(flightNumber) && flightPlanner.getFlightClassPrices().get(flightNumber).containsKey(classType)) {
                 flightPlanner.updateFlightClassPrices(flightNumber, classType, price);
-                showAlert(Alert.AlertType.INFORMATION, "Success", "Seat price set for flight: " + flightNumber + ", Class: " + classType + ", Price: " + price + " EUR");
-                //double updatedPrice = flightPlanner.getFlightClassPrices().get(flightNumber).get(classType);
-                //System.out.println("Updated Price: " + updatedPrice);
+                showAlert(Alert.AlertType.INFORMATION, "Success Updating", "Seat price update for flight: " + flightNumber + ", Class: " + classType + ", Price: " + price + " EUR");
+//                /*double updatedPrice = flightPlanner.getFlightClassPrices().get(flightNumber).get(classType);
+//                System.out.println("Updated Price: " + updatedPrice);*/
             } else {
-                showAlert(Alert.AlertType.ERROR, "Invalid Flight Number", "Flight number " + flightNumber + " not found.");
-                System.out.println("Invalid flight number: " + flightNumber);
+                flightPlanner.addFlightClassPrice(flightNumber, classType, price);
+                showAlert(Alert.AlertType.INFORMATION, "Success Uploading", "Seat price set for flight: " + flightNumber + ", Class: " + classType + ", Price: " + price + " EUR");
             }
 
 
@@ -1432,11 +2271,21 @@ public class FlightPlannerApp extends Application {
                 return;
             }
 
+            if(flightPlanner.checkFlightNotExistence(flightNumber)){
+                showAlert(Alert.AlertType.ERROR,"Input Error","Flight " + flightNumber + " not found.");
+                return;
+            }
+
             for (String seatNumber : seatArray) {
                 seatNumber = seatNumber.trim();
+                if (flightPlanner.checkSeatNotExistence(seatNumber, flightNumber)) {
+                    showAlert(Alert.AlertType.ERROR, "Seat Number Invalid", "Seat " + seatNumber + " not found on flight " + flightNumber);
+                    return;
+                }
                 try {
                     flightPlanner.removeSeatFromFlight(flightNumber, seatNumber);
                 } catch (IOException ex) {
+                    showAlert(Alert.AlertType.ERROR,"Removing Seat Failed","An error occurred while the seat was being removed.");
                     throw new RuntimeException(ex);
                 }
             }
@@ -1479,6 +2328,12 @@ public class FlightPlannerApp extends Application {
                 showAlert(Alert.AlertType.ERROR, "Invalid Input", "Please fill all the fields.");
                 return;
             }
+
+            if (flightPlanner.checkFlightNotExistence(flightNumber)) {
+                showAlert(Alert.AlertType.ERROR, "Input Error", "Flight " + flightNumber + " not found.");
+                return;
+            }
+
             if (!classType.equals("Economy") &&
                     !classType.equals("Business") &&
                     !classType.equals("First")) {
@@ -1487,13 +2342,24 @@ public class FlightPlannerApp extends Application {
             }
 
             String[] seats = seatList.split(",");
+            Flight flight = flightPlanner.findFlight(flightNumber);
 
             for (String seatNumber : seats) {
                 Seat seat = new Seat(seatNumber.trim(), classType, flightNumber, true);
-                try {
-                    flightPlanner.addSeatToFlight(flightNumber, seat);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
+                int seatCountsOnCSV = flightPlanner.getSeatClassCountsForFlight(flightNumber, seat.getClassType());
+                int maxSeatCountForClass = flight.getSeatClassCount().getOrDefault(seat.getClassType(), 0);
+                if (maxSeatCountForClass > seatCountsOnCSV) {
+                    try {
+                        flightPlanner.addSeatToFlight(flightNumber, seat);
+                    } catch (IOException ex) {
+                        showAlert(Alert.AlertType.ERROR,"Adding Seat Failed","An error occurred while the seat was being added.");
+                        throw new RuntimeException(ex);
+                    }
+                } else {
+                    showAlert(Alert.AlertType.ERROR, "Adding Seat Failed", "Cannot add seat " + seat.getSeatNumber() + " to flight "
+                            + flightNumber + ". Maximum capacity for " + seat.getClassType() +
+                            " reached or there's no seats for this class on this flight.");
+                    return;
                 }
             }
 
@@ -1533,7 +2399,9 @@ public class FlightPlannerApp extends Application {
         updateMsgField.setPromptText("Update Message");
 
         ComboBox<NotificationType> notificationTypeComboBox = new ComboBox<>();
-        notificationTypeComboBox.getItems().addAll(NotificationType.values());
+        notificationTypeComboBox.getItems().addAll(Arrays.stream(NotificationType.values())
+                .filter(type -> type != NotificationType.CANCELLATION)
+                .toList());
         notificationTypeComboBox.setPromptText("Select Notification Type");
 
         Button updateFlightStatusBtn = new Button("Update Flight Status");
@@ -1550,22 +2418,22 @@ public class FlightPlannerApp extends Application {
                 return;
             }
 
-            if (!flightPlanner.checkFlightExistence(flightNumber)) {
+            if (flightPlanner.checkFlightNotExistence(flightNumber)) {
                 showAlert(Alert.AlertType.ERROR, "Input Error", "Flight " + flightNumber + " not found");
                 return;
             }
 
-            // Verificare che il tempo sia nella forma HH:MM
-            if (!isValidTimeFormat(departureTimeField.getText())) {
+            // Verificare se il tempo sia nella forma HH:MM
+            if (notValidTimeFormat(departureTimeField.getText())) {
                 showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter the departure time in the format HH:MM.");
                 return;
             }
-            if (!isValidTimeFormat(arrivalTimeField.getText())) {
+            if (notValidTimeFormat(arrivalTimeField.getText())) {
                 showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter the arrival time in the format HH:MM.");
                 return;
             }
 
-            // Controllare se l'update message è vuota
+            // Controllare se update message è vuota
             if (updateMsg == null || updateMsg.isEmpty()) {
                 showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter an update message.");
                 return;
@@ -1618,7 +2486,7 @@ public class FlightPlannerApp extends Application {
             if (flightNumber.isEmpty()) {
                 showAlert(Alert.AlertType.ERROR, "Input Error", "You must enter a flight number.");
                 return;
-            } else if (!flightPlanner.checkFlightExistence(flightNumber)) {
+            } else if (flightPlanner.checkFlightNotExistence(flightNumber)) {
                 showAlert(Alert.AlertType.ERROR, "Invalid Flight Number", "Flight number " + flightNumber + " not found.");
                 return;
             }
@@ -1626,7 +2494,7 @@ public class FlightPlannerApp extends Application {
                 flightPlanner.removeFlight(flightNumber);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Flight " + flightNumber + " has been removed successfully.");
             } catch (IOException ex) {
-                showAlert(Alert.AlertType.ERROR, "Error", "Error removing flight.");
+                showAlert(Alert.AlertType.ERROR, "Removing Flight Failed", "Flight not removed. An error occurred while the flight " + flightNumber +" was being removed.");
                 throw new RuntimeException(ex);
             }
             removeFlightNumberField.clear();
@@ -1662,6 +2530,14 @@ public class FlightPlannerApp extends Application {
         TextField arrivalTimeField = new TextField();
         arrivalTimeField.setPromptText("Arrival Time (HH:MM)");
 
+        TextField economySeatsNumberField = new TextField();
+        economySeatsNumberField.setPromptText("Economy Seats Number");
+
+        TextField businessSeatsNumberField = new TextField();
+        businessSeatsNumberField.setPromptText("Business Seats Number");
+
+        TextField firstSeatsNumberField = new TextField();
+        firstSeatsNumberField.setPromptText("First Seats Number");
 
         Button addFlightBtn = new Button("Add Flight");
 
@@ -1671,8 +2547,15 @@ public class FlightPlannerApp extends Application {
             String arrival = arrivalField.getText();
             LocalDate departureDate = departureDatePicker.getValue();
             LocalDate arrivalDate = arrivalDatePicker.getValue();
+            String economySeatsNumberStr = economySeatsNumberField.getText();
+            int economySeatsNumber;
+            String businessSeatsNumberStr = businessSeatsNumberField.getText();
+            int businessSeatsNumber;
+            String firstSeatsNumberStr = firstSeatsNumberField.getText();
+            int firstSeatsNumber;
 
-            if (flightNumber.isEmpty() || departure.isEmpty() || arrival.isEmpty()) {
+            if (flightNumber.isEmpty() || departure.isEmpty() || arrival.isEmpty() || economySeatsNumberStr.isEmpty() || businessSeatsNumberStr.isEmpty()
+            || firstSeatsNumberStr.isEmpty()) {
                 showAlert(Alert.AlertType.ERROR, "Input Error", "All fields are required.");
                 return;
             }
@@ -1682,12 +2565,21 @@ public class FlightPlannerApp extends Application {
                 return;
             }
 
-            if (!isValidTimeFormat(departureTimeField.getText())) {
+            if (notValidTimeFormat(departureTimeField.getText())) {
                 showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter the departure time in the format HH:MM.");
                 return;
             }
-            if (!isValidTimeFormat(arrivalTimeField.getText())) {
+            if (notValidTimeFormat(arrivalTimeField.getText())) {
                 showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter the arrival time in the format HH:MM.");
+                return;
+            }
+
+            try {
+                economySeatsNumber = Integer.parseInt(economySeatsNumberStr);
+                businessSeatsNumber = Integer.parseInt(businessSeatsNumberStr);
+                firstSeatsNumber = Integer.parseInt(firstSeatsNumberStr);
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Invalid Input", "Please enter valid numbers.");
                 return;
             }
 
@@ -1697,12 +2589,12 @@ public class FlightPlannerApp extends Application {
                 LocalTime arrivalTime = LocalTime.parse(arrivalTimeField.getText());
                 LocalDateTime arrivalDateTime = LocalDateTime.of(arrivalDate, arrivalTime);
 
-                Flight flight = new Flight(flightNumber, departure, arrival, departureDateTime, arrivalDateTime);
+                Flight flight = new Flight(flightNumber, departure, arrival, departureDateTime, arrivalDateTime, economySeatsNumber, businessSeatsNumber, firstSeatsNumber);
 
                 flightPlanner.addFlight(flight);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Flight " + flight.getFlightNumber() + " has been added successfully.");
             } catch (IOException ex) {
-                showAlert(Alert.AlertType.INFORMATION, "Error", "Error adding flight.");
+                showAlert(Alert.AlertType.INFORMATION, "Adding Flight Failed", "An error occurred while the flight " + flightNumber +" was being added.");
             }
 
             flightNumberField.clear();
@@ -1712,16 +2604,18 @@ public class FlightPlannerApp extends Application {
             arrivalDatePicker.setValue(null);
             departureTimeField.clear();
             arrivalTimeField.clear();
+            economySeatsNumberField.clear();
+            businessSeatsNumberField.clear();
+            firstSeatsNumberField.clear();
         });
 
         Button backButton = new Button("Back");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         vbox.getChildren().addAll(flightLabel, flightNumberField, departureField, arrivalField,
-                departureDatePicker, departureTimeField,
-                arrivalDatePicker, arrivalTimeField,
-                addFlightBtn, backButton);
-        Scene scene = new Scene(vbox, 400, 400);
+                departureDatePicker, departureTimeField, arrivalDatePicker, arrivalTimeField, economySeatsNumberField,
+                businessSeatsNumberField, firstSeatsNumberField, addFlightBtn, backButton);
+        Scene scene = new Scene(vbox, 400, 480);
         primaryStage.setScene(scene);
     }
 
@@ -1775,12 +2669,12 @@ public class FlightPlannerApp extends Application {
         primaryStage.setScene(scene);
     }
 
-    private boolean isValidTimeFormat(String time) {
+    private boolean notValidTimeFormat(String time) {
         try {
-            LocalTime.parse(time); // Viene lanciato un'eccezione se il formato è sbagliato
-            return true;
-        } catch (DateTimeParseException e) {
+            LocalTime.parse(time); // Se il formato non è giusto, restituisce true e viene lanciato un eccezione
             return false;
+        } catch (DateTimeParseException e) {
+            return true;
         }
     }
 

@@ -19,7 +19,7 @@ public class AirportManagerTest {
     }
 
     @Test
-    @DisplayName("Text that checks loading airports from the file CSV and verifies that it's possible to find an airport written on the file")
+    @DisplayName("Text that checks loading airports from the CSV file and verifies that it's possible to find an airport listed in the file")
     public void testLoadAirportsFromCSV() {
         List<Airport> airports = airportManager.getAllAirports();
 
@@ -33,7 +33,7 @@ public class AirportManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks adding an airport works correctly and after addition the file CSV is updated")
+    @DisplayName("Test that checks if adding an airport works correctly and that the CSV file is updated after addition")
     public void testAddAirport() throws IOException {
         Airport newAirport = new Airport("WI", "Wonderland International", "Far Away", "Childhood");
 
@@ -55,7 +55,7 @@ public class AirportManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks removing an airport from the file CSV works correctly")
+    @DisplayName("Test that checks removing an airport from the CSV file works correctly")
     public void testRemoveAirport() throws IOException {
         String airportCode = "PVG";
 

@@ -3,7 +3,7 @@ package flightPlanner;
 public class Seat {
     private final String seatNumber; // es.13A
     private final String flightNumber;
-    private String classType; // es. "Economy", "Business", "First"
+    private final String classType; // es. "Economy", "Business", "First"
     private boolean isAvailable;
 
     public Seat(String seatNumber, String classType, String flightNumber, boolean isAvailable) {
@@ -27,10 +27,6 @@ public class Seat {
 
     public String getClassType() {
         return classType;
-    }
-
-    public void setClassType(String classType) {
-        this.classType = classType;
     }
 
     public String getFlightNumber() {

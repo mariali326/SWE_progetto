@@ -11,10 +11,10 @@ import java.util.*;
 
 public class PassengerManager {
     private static final Log log = LogFactory.getLog(PassengerManager.class);
-    private List<Passenger> passengers;
-    private FlightManager flightManager;
-    private CSVManager csvManager;
-    private String csvFilePath = "csv/passengers.csv";
+    private final List<Passenger> passengers;
+    private final FlightManager flightManager;
+    private final CSVManager csvManager;
+    private final String csvFilePath = "csv/passengers.csv";
 
     public PassengerManager(FlightManager flightManager) throws IOException {
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(csvFilePath);
@@ -37,11 +37,13 @@ public class PassengerManager {
                     record[1],
                     record[2],
                     record[3],
-                    !record[4].isEmpty() ? record[4] : null,
+                    !record[4].isEmpty() ? record[4] : "",
                     record[5],
                     !record[6].isEmpty() ? parseNotificationTypes(record[6]) : null,
                     !record[7].isEmpty() ? parseNotificationChannels(record[7]) : null,
-                    !record[8].isEmpty() ? PaymentMethod.valueOf(record[8]) : null
+                    !record[8].isEmpty() ? PaymentMethod.valueOf(record[8]) : null,
+                    record[9],
+                    record[10]
             );
             passengers.add(passenger);
         }
@@ -51,7 +53,7 @@ public class PassengerManager {
     private void saveAllPassengers() throws IOException {
         List<String[]> records = new ArrayList<>();
         records.add(new String[]{"username", "name", "surname", "email", "phoneNumber", "password", "notificationTypes",
-                "notificationChannel", "paymentMethod"});
+                "notificationChannel", "paymentMethod", "documentType", "documentId"});
         for (Passenger passenger : passengers) {
 
             records.add(new String[]{
@@ -63,14 +65,16 @@ public class PassengerManager {
                     passenger.getPassword(),
                     formatNotificationTypes(passenger.getPreferredTypes()),
                     formatNotificationChannels(passenger.getChannels()),
-                    passenger.getPaymentMethod() != null ? passenger.getPaymentMethod().name() : "No payment method set"
+                    passenger.getPaymentMethod() != null ? passenger.getPaymentMethod().name() : "No payment method set",
+                    passenger.getDocumentType(),
+                    passenger.getDocumentId()
 
             });
         }
         try {
             csvManager.writeAll(records, csvFilePath);
         } catch (IOException e) {
-            log.error("An error occurred while saving passengers on file CSV: " + e.getMessage());
+            log.error("An error occurred while saving passengers to the CSV file: " + e.getMessage());
             throw e;
         }
     }
@@ -80,7 +84,9 @@ public class PassengerManager {
         for (Passenger existingPassenger : passengers) {
             if (existingPassenger.getUsername().equalsIgnoreCase(passenger.getUsername()) &&
                     existingPassenger.getSurname().equalsIgnoreCase(passenger.getSurname()) &&
-                    existingPassenger.getName().equalsIgnoreCase(passenger.getName())) {
+                    existingPassenger.getName().equalsIgnoreCase(passenger.getName()) &&
+                    existingPassenger.getDocumentType().equalsIgnoreCase(passenger.getDocumentType()) &&
+                    existingPassenger.getDocumentId().equalsIgnoreCase(passenger.getDocumentId())) {
                 throw new IllegalArgumentException("Passenger " + passenger.getUsername() + " " +
                         passenger.getName() + " " + passenger.getSurname() + " already exists.");
             }
@@ -92,27 +98,34 @@ public class PassengerManager {
                 passenger.getName(),
                 passenger.getSurname(),
                 passenger.getEmail(),
+                passenger.getPhoneNumber(),
                 passenger.getPassword(),
                 formatNotificationTypes(passenger.getPreferredTypes()),
                 formatNotificationChannels(passenger.getChannels()),
-                passenger.getPaymentMethod() != null ? passenger.getPaymentMethod().name() : "No payment method set"
+                passenger.getPaymentMethod() != null ? passenger.getPaymentMethod().name() : "No payment method set",
+                passenger.getDocumentType(),
+                passenger.getDocumentId()
 
         };
         try {
             csvManager.appendRecord(record, csvFilePath);
         } catch (IOException e) {
-            log.error("An error occurred while writing a passenger on file CSV", e);
+            log.error("An error occurred while writing a passenger to the CSV file", e);
             throw e;
         }
         System.out.println("Passenger registered: " + passenger.getUsername() + "\nWelcome " + passenger.getName() + "!");
     }
 
-    public void unregisterPassenger(String username) throws IOException {
+    public void unregisterPassenger(Passenger passenger) throws IOException {
         Passenger passengerToRemove = null;
         Iterator<Passenger> iterator = passengers.iterator();
-        for (Passenger passenger : passengers) {
-            if (passenger.getUsername().equals(username)) {
-                passengerToRemove = passenger;
+
+        while (iterator.hasNext()) {
+            Passenger p = iterator.next();
+            if (passenger.getUsername().equals(p.getUsername()) &&
+                    passenger.getSurname().equals(p.getSurname()) &&
+                    passenger.getName().equals(p.getName())) {
+                passengerToRemove = p;
                 break;
             }
         }
@@ -154,8 +167,7 @@ public class PassengerManager {
             throw new IllegalArgumentException("Passenger " + passenger.getUsername() + " not found.");
         }
         saveAllPassengers();
-        System.out.println("Passenger updated: (Username: " + passenger.getUsername() + ", Name: " + passenger.getName() +
-                ", Surname: " + passenger.getSurname() + ")");
+        System.out.println("Passenger updated: " + passenger);
     }
 
     // Metodo per disiscrivere un passeggero da un volo
@@ -185,15 +197,6 @@ public class PassengerManager {
         return passengers;
     }
 
-    public Passenger getPassengerByFullName(String name, String surname) {
-        List<Passenger> passengers = getAllPassengers();
-        for (Passenger passenger : passengers) {
-            if (passenger.getName().equalsIgnoreCase(name) && passenger.getSurname().equalsIgnoreCase(surname))
-                return passenger;
-        }
-        return null;
-    }
-
     public Passenger getPassengerByUsername(String username) {
         for (Passenger passenger : passengers) {
             if (passenger.getUsername().equalsIgnoreCase(username)) {
@@ -201,6 +204,16 @@ public class PassengerManager {
             }
         }
         return null;// Se non si trova passenger con questo username
+    }
+
+    public Passenger getPassengerByFullNameAndDocument(String name, String surname, String documentType, String documentId) {
+        for (Passenger passenger : passengers) {
+            if (passenger.getName().equals(name) && passenger.getSurname().equals(surname)
+                    && passenger.getDocumentType().equals(documentType) && passenger.getDocumentId().equals(documentId)) {
+                return passenger;
+            }
+        }
+        return null;
     }
 
     // Converte le stringhe in NotificationType

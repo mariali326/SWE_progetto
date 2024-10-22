@@ -15,9 +15,9 @@ import java.util.stream.Collectors;
 
 public class SeatManager {
     private static final Log log = LogFactory.getLog(SeatManager.class);
-    private CSVManager csvManager;
-    private List<Seat> seats;
-    private String csvFilePath = "csv/seats.csv";
+    private final CSVManager csvManager;
+    private final List<Seat> seats;
+    private final String csvFilePath = "csv/seats.csv";
 
     public SeatManager() throws IOException {
         // Viene caricato il file CSV dal classpath
@@ -82,7 +82,7 @@ public class SeatManager {
         try {
             csvManager.writeAll(records, csvFilePath);
         } catch (IOException e) {
-            log.error("An error occurred while saving seats on file CSV: " + e.getMessage());
+            log.error("An error occurred while saving seats to the CSV file: " + e.getMessage());
             throw e;
         }
     }
@@ -124,7 +124,7 @@ public class SeatManager {
             seat.releaseSeat();
             saveAllSeats();
             updateSeatAvailability(seatNumber, flightNumber, true);
-            System.out.println("Seat " + seatNumber + " successfully released and it's now available.");
+            //System.out.println("Seat " + seatNumber + " successfully released and it's now available.");
         } else {
             System.out.println("Seat " + seatNumber + " is already available or doesn't exist.");
         }

@@ -21,7 +21,7 @@ public class FlightManagerTest {
     }
 
     @Test
-    @DisplayName("Text that checks loading flights from the file CSV and verifies that it's possible to find a flight written on the file")
+    @DisplayName("Text that checks loading flights from the CSV file and verifies that it's possible to find a flight listed in the file")
     public void testLoadFlightsFromCSV() {
         List<Flight> flights = flightManager.getAllFlights();
 
@@ -34,9 +34,10 @@ public class FlightManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks adding a flight works correctly and after addition the file CSV is updated")
+    @DisplayName("Test that checks if adding a flight works correctly and that the file CSV is updated after addition")
     public void testAddFlight() throws IOException {
-        Flight newFlight = new Flight("F010", "PVG", "FLR", LocalDateTime.now(), LocalDateTime.now().plusHours(12).plusMinutes(55));
+        Flight newFlight = new Flight("F010", "PVG", "FLR", LocalDateTime.now(),
+                LocalDateTime.now().plusHours(12).plusMinutes(55), 300, 120, 15);
 
         flightManager.addFlight(newFlight);
 
@@ -49,14 +50,15 @@ public class FlightManagerTest {
     @Test
     @DisplayName("Test that checks it's impossible to add the same flight more than once")
     public void testAddDuplicateFlight() throws IOException {
-        Flight newFlight = new Flight("F011", "JFK", "LHR", LocalDateTime.now(), LocalDateTime.now().plusHours(7).plusMinutes(30));
+        Flight newFlight = new Flight("F011", "JFK", "LHR", LocalDateTime.now(),
+                LocalDateTime.now().plusHours(7).plusMinutes(30), 260, 55, 10);
 
         flightManager.addFlight(newFlight);
         assertThrows(IllegalArgumentException.class, () -> flightManager.addFlight(newFlight));
     }
 
     @Test
-    @DisplayName("Test that checks removing a flight from the file CSV works correctly")
+    @DisplayName("Test that checks removing a flight from the CSV file works correctly")
     public void testRemoveFlight() throws IOException {
         String flightNumber = "F001";
 

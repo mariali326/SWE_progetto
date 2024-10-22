@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Set;
 
 public class NotificationPreferences {
-    private Set<NotificationType> preferredTypes;
-    private List<NotificationChannel> channels;
+    private final Set<NotificationType> preferredTypes;
+    private final List<NotificationChannel> channels;
 
     public NotificationPreferences() {
         this.preferredTypes = new HashSet<>();

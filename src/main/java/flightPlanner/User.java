@@ -31,5 +31,4 @@ public abstract class User {
         this.email = email;
     }
 
-    public abstract void displayRole();
 }

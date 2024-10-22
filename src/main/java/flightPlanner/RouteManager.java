@@ -13,9 +13,9 @@ import java.util.List;
 
 public class RouteManager {
     private static final Log log = LogFactory.getLog(RouteManager.class);
-    private CSVManager csvManager;
-    private List<Route> routes;
-    private String csvFilePath = "csv/routes.csv";
+    private final CSVManager csvManager;
+    private final List<Route> routes;
+    private final String csvFilePath = "csv/routes.csv";
 
     public RouteManager() throws IOException {
         // Viene caricato il file CSV dal classpath
@@ -45,7 +45,7 @@ public class RouteManager {
         try {
             csvManager.appendRecord(record, csvFilePath);
         } catch (IOException e) {
-            log.error("An error occurred while writing on a file CSV", e);
+            log.error("An error occurred while writing a route to the CSV file", e);
             throw e;
         }
     }
@@ -110,7 +110,7 @@ public class RouteManager {
         try {
             csvManager.writeAll(records, csvFilePath);
         } catch (IOException e) {
-            log.error("An error occurred while saving on file CSV: " + e.getMessage());
+            log.error("An error occurred while saving routes to the CSV file: " + e.getMessage());
             throw e;
         }
     }

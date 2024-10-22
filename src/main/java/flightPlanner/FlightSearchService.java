@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FlightSearchService {
-    private FlightManager flightManager;
-    private AirportManager airportManager;
+    private final FlightManager flightManager;
+    private final AirportManager airportManager;
 
 
     public FlightSearchService(FlightManager flightManager, AirportManager airportManager) {

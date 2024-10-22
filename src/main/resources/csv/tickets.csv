@@ -1,7 +1,7 @@
-ticketNumber,bookingId,flightNumber,seatNumber,price,passengerName,passengerSurname
-T001,BK001,F001,1A,1000,John,Doe
-T002,BK002,F002,10C,250,Jane,Smith
-T003,BK003,F003,12A,760,Alice,Johnson
-T004,BK004,F001,1B,1000,Bob,Brown
-T005,BK005,F005,2A,2000,Samanta,Morini
-T006,BK005,F005,11B,1000,Andrea,Morini
+ticketNumber,bookingId,flightNumber,seatNumber,price,passengerName,passengerSurname,luggageIds,documentType,documentId
+T001,BK001,F001,1A,1000,John,Doe,L001,ID CARD,ID0123456
+T002,BK002,F002,10C,250,Jane,Smith,L002,ID CARD,ID123H456
+T003,BK003,F003,12A,760,Alice,Johnson,L003|L004,PASSPORT,PS1234567
+T004,BK004,F001,1B,1000,Bob,Brown,L005,ID CARD,ID1357900
+T005,BK005,F005,2A,2000,Samanta,Morini,L006|L007|L008,PASSPORT,PS2468222
+T006,BK005,F005,11B,1000,Andrea,Morini,L009|L010,PASSPORT,PS1357900

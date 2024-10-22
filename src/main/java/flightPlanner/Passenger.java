@@ -6,24 +6,26 @@ import java.util.List;
 import java.util.Set;
 
 public class Passenger extends User implements Observer {
-    private final String role;
+    private final List<Flight> registeredFlights;
     private String name;
     private String surname;
     private String phoneNumber; // Facoltativo
-    private List<Flight> registeredFlights;
     private NotificationPreferences preferences;
     private PaymentMethod paymentMethod;
+    private String documentType;
+    private String documentId;
 
     public Passenger(String username, String name, String surname, String email, String phoneNumber, String password,
-                     Set<NotificationType> notificationTypes, List<NotificationChannel> channels, PaymentMethod paymentMethod) {
+                     Set<NotificationType> notificationTypes, List<NotificationChannel> channels, PaymentMethod paymentMethod, String documentType, String documentId) {
         super(username, password, email);
         this.name = name;
         this.surname = surname;
         this.phoneNumber = phoneNumber;
         this.registeredFlights = new ArrayList<>();
         this.preferences = new NotificationPreferences();
-        this.role = "Passenger";
         this.paymentMethod = paymentMethod;
+        this.documentType = documentType;
+        this.documentId = documentId;
 
         setDefaultPreferences(notificationTypes, channels);// Se non fornite
     }
@@ -61,10 +63,6 @@ public class Passenger extends User implements Observer {
         this.phoneNumber = phoneNumber;
     }
 
-    public void displayRole() {
-        System.out.println("Role: " + role);
-    }
-
     public PaymentMethod getPaymentMethod() {
         return paymentMethod;
     }
@@ -73,11 +71,32 @@ public class Passenger extends User implements Observer {
         this.paymentMethod = paymentMethod;
     }
 
+    public String getDocumentType() {
+        return documentType;
+    }
+
+    public void setDocumentType(String documentType) {
+        this.documentType = documentType;
+    }
+
+    public String getDocumentId() {
+        return documentId;
+    }
+
+    public void setDocumentId(String documentId) {
+        this.documentId = documentId;
+    }
+
+    public List<Flight> getRegisteredFlights() {
+        return registeredFlights;
+    }
+
     public void registerForFlight(Flight flight) {
         if (!isRegisteredForFlight(flight)) {
             registeredFlights.add(flight);
             flight.subscribe(this);
-            System.out.println(name + " " + surname + " registered for flight: " + flight.getFlightNumber());
+//            System.out.println(name + " " + surname + " registered for flight: " + flight.getFlightNumber());
+            System.out.println(name + " " + surname + " " + documentId + " registered for flight: " + flight.getFlightNumber());
         } else {
             System.out.println(name + " " + surname + " is already registered for flight: " + flight.getFlightNumber());
         }
@@ -88,9 +107,11 @@ public class Passenger extends User implements Observer {
         if (isRegisteredForFlight(flight)) {
             registeredFlights.remove(flight);
             flight.unsubscribe(this);
-            System.out.println(name + " " + surname + " unregistered from flight: " + flight.getFlightNumber());
+//            System.out.println(name + " " + surname + " unregistered from flight: " + flight.getFlightNumber());
+            System.out.println(name + " " + surname + " " + documentId + " unregistered from flight: " + flight.getFlightNumber());
         } else {
-            System.out.println(name + " " + surname + " is not registered for flight: " + flight.getFlightNumber());
+//            System.out.println(name + " " + surname + " is not registered for flight: " + flight.getFlightNumber());
+            System.out.println(name + " " + surname + " " + documentId + " is not registered for flight: " + flight.getFlightNumber());
         }
     }
 
@@ -201,6 +222,7 @@ public class Passenger extends User implements Observer {
         return getUsername() + ", " + name + " " + surname +
                 ", email: " + getEmail() +
                 ", phoneNumber: " + phoneNumStr +
+                ", password: " + getPassword() +
                 ", preferredNotificationTypes: " + preferences.getPreferredTypes() +
                 ", preferredChannels: " + channelList +
                 ", paymentMethod: " + paymentMethod;

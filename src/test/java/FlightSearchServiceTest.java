@@ -38,16 +38,19 @@ public class FlightSearchServiceTest {
 
             List<Flight> flights = new ArrayList<>();
             LocalDateTime departureTime = LocalDate.now().atTime(10, 0);
-            flights.add(new Flight("F001", "JFK", "LAX", departureTime, departureTime.plusHours(6).plusMinutes(15)));
-            flights.add(new Flight("F011", "LAX", "JFK", departureTime.plusHours(5), departureTime.plusHours(11).plusMinutes(15)));
+            flights.add(new Flight("F001", "JFK", "LAX", departureTime,
+                    departureTime.plusHours(5).plusMinutes(30), 240, 54, 10));
+            flights.add(new Flight("F011", "LAX", "JFK", departureTime.plusHours(5),
+                    departureTime.plusHours(10).plusMinutes(30), 250, 50, 12));
 
-            when(mockFlightManager.getAllFlights()).thenReturn(flights);// Simula il comportamento delle dipendenze, testa solo la logica all'interno di questa classe senza interagire con i reali manager
+            // Simula il comportamento delle dipendenze, testa solo la logica all'interno di questa classe senza interagire con i reali manager
+            when(mockFlightManager.getAllFlights()).thenReturn(flights);
             when(mockAirportManager.getAllAirports()).thenReturn(airports);
         }
     }
 
     @Test
-    @DisplayName("Test that checks the validity of a search of flight according to departure and arrival(code or city)")
+    @DisplayName("Test that checks the validity of a search of flight based on departure and arrival(code or city)")
     public void testSearchFlightsValidDepartureAndArrival() {
         LocalDate searchDate = LocalDate.now();
         List<Flight> result = flightSearchService.searchFlights("New York", "LAX", searchDate);
@@ -66,7 +69,7 @@ public class FlightSearchServiceTest {
     }
 
     @Test
-    @DisplayName("Test that checks if an user enters a wrong date, the result should be nothing")
+    @DisplayName("Test that checks if a user enters a wrong date, the result should be empty")
     public void testSearchFlightsWithDifferentDate() {
         LocalDate searchDate = LocalDate.now().plusDays(1); // Data diversa
         List<Flight> result = flightSearchService.searchFlights("JFK", "LAX", searchDate);

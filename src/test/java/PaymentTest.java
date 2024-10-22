@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class PaymentTest {
 
     @Test
-    @DisplayName("Test that checks a payment creation")
+    @DisplayName("Test that checks the creation of a payment")
     public void testPaymentCreation() {
         String paymentId = "P009";
         String bookingId = "BK014";
@@ -30,12 +30,12 @@ public class PaymentTest {
     }
 
     @Test
-    @DisplayName("Test that checks the method toString returns the right string format")
+    @DisplayName("Test that checks the toString method returns the right string format")
     public void testToString() {
         LocalDateTime paymentDate = LocalDateTime.now();
         Payment payment = new Payment("P018", "BK018", 500.0, paymentDate, PaymentMethod.PAYPAL, "mysterious");
 
-        String expectedString = "Payment ID: P018, Booking Id: BK018, Amount Payed: 500.0, Payment Date: " + paymentDate +
+        String expectedString = "Payment ID: P018, Booking Id: BK018, Amount Payed: 500.0 EUR, Payment Date: " + paymentDate +
                 ", Payment Method: PAYPAL, Passenger Username: mysterious";
 
         assertEquals(expectedString, payment.toString());

@@ -7,7 +7,7 @@ public class Route {
     private final String routeId;
     private final String departureAirportCode;
     private final String arrivalAirportCode;
-    private double distance; // In km
+    private final double distance; // In km
     private Duration flightDuration;
 
     public Route(String routeId, String departureAirportCode, String arrivalAirportCode, double distance, Duration flightDuration) {
@@ -20,7 +20,7 @@ public class Route {
 
     // Metodo per mostrare "xxhxxm" in Duration
     public static Duration parseDuration(String durationStr) {
-        String[] parts = durationStr.split("h|m");
+        String[] parts = durationStr.split("[hm]");
         long hours = Long.parseLong(parts[0]);
         long minutes = Long.parseLong(parts[1]);
         return Duration.ofHours(hours).plusMinutes(minutes);
@@ -44,6 +44,10 @@ public class Route {
 
     public Duration getFlightDuration() {
         return flightDuration;
+    }
+
+    public void setFlightDuration(Duration flightDuration) {
+        this.flightDuration = flightDuration;
     }
 
     // Metodo per convertire Duration in "xxhxxm"

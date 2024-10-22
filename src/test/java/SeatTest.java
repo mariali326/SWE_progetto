@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SeatTest {
     @Test
-    @DisplayName("Test that checks a seat creation")
+    @DisplayName("Test that checks the creation of a seat")
     public void testSeatCreation() {
         String seatNumber = "13C";
         String classType = "Economy";
@@ -25,7 +25,7 @@ public class SeatTest {
     }
 
     @Test
-    @DisplayName("Test that checks the method toString() returns the right format of a string")
+    @DisplayName("Test that checks the toString() method returns the right format of a string")
     public void testToString() {
         Seat seat = new Seat("13D", "Economy", "F014", false);
 

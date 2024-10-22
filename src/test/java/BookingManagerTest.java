@@ -17,11 +17,11 @@ public class BookingManagerTest {
     @BeforeAll
     public static void setUp() throws IOException {
         FlightManager flightManager = new FlightManager();
-        bookingManager = new BookingManager(flightManager, new PassengerManager(flightManager), new TicketManager());
+        bookingManager = new BookingManager(flightManager, new PassengerManager(flightManager), new TicketManager(new LuggageManager()));
     }
 
     @Test
-    @DisplayName("Test that checks loading booking from the file CSV")
+    @DisplayName("Test that checks loading booking from the CSV file")
     public void testLoadBookingFromCSV() {
         List<Booking> bookings = bookingManager.getAllBookings();
 
@@ -33,10 +33,13 @@ public class BookingManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks adding a booking works correctly and after addition the file CSV is updated")
+    @DisplayName("Test that checks if adding a booking works correctly and that the CSV file is updated after the addition")
     public void testAddBooking() throws IOException {
         List<Ticket> tickets = new ArrayList<>();
-        Ticket ticket = new Ticket("T010", "BK010", "F011", "8A", 250.0, "Francesca", "Dattoli");
+        Ticket ticket = new Ticket("T010", "BK010", "F011", "8A", 250.0,
+                "Francesca", "Dattoli", new ArrayList<>());
+        ticket.setDocumentType("ID CARD");
+        ticket.setDocumentId("ID135C78H");
         tickets.add(ticket);
         Booking newBooking = new Booking("BK010", "cecciasuper", "F011", LocalDateTime.now(), tickets, 250.0);
 
@@ -54,7 +57,10 @@ public class BookingManagerTest {
     @DisplayName("Test that checks it's impossible to add the same booking more than once")
     public void testAddDuplicateBooking() throws IOException {
         List<Ticket> tickets = new ArrayList<>();
-        tickets.add(new Ticket("T015", "BK015", "F009", "20A", 350.0, "Stella", "Girailmondo"));
+        tickets.add(new Ticket("T015", "BK015", "F009", "20A", 350.0,
+                "Stella", "Girailmondo", new ArrayList<>()));
+        tickets.getFirst().setDocumentType("PASSPORT");
+        tickets.getFirst().setDocumentId("PS123ST45");
         Booking newbooking = new Booking("BK015", "123stella", "F009", LocalDateTime.now(), tickets, 350.0);
 
         bookingManager.addBooking(newbooking);
@@ -63,7 +69,7 @@ public class BookingManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks removing a booking from the file CSV works correctly")
+    @DisplayName("Test that checks removing a booking from the CSV file works correctly")
     public void testRemoveBooking() throws IOException {
         String bookingId = "BK002";
 

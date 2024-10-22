@@ -13,9 +13,9 @@ import java.util.List;
 
 public class FlightManager {
     private static final Log log = LogFactory.getLog(FlightManager.class);
-    private CSVManager csvManager;
-    private List<Flight> flights;
-    private String csvFilePath = "csv/flights.csv";
+    private final CSVManager csvManager;
+    private final List<Flight> flights;
+    private final String csvFilePath = "csv/flights.csv";
 
     public FlightManager() throws IOException {
         // Viene caricato il file CSV dal classpath
@@ -39,7 +39,10 @@ public class FlightManager {
                     record[1],
                     record[2],
                     LocalDateTime.parse(record[3]),
-                    LocalDateTime.parse(record[4])
+                    LocalDateTime.parse(record[4]),
+                    Integer.parseInt(record[5]),
+                    Integer.parseInt(record[6]),
+                    Integer.parseInt(record[7])
             );
             flights.add(flight);
         }
@@ -57,12 +60,15 @@ public class FlightManager {
                     flight.getDepartureAirportCode(),
                     flight.getArrivalAirportCode(),
                     String.valueOf(flight.getDepartureTime()),
-                    String.valueOf(flight.getArrivalTime())
+                    String.valueOf(flight.getArrivalTime()),
+                    String.valueOf(flight.getEconomySeats()),
+                    String.valueOf(flight.getBusinessSeats()),
+                    String.valueOf(flight.getFirstSeats())
             };
             try {
                 csvManager.appendRecord(record, csvFilePath);
             } catch (IOException e) {
-                log.error("An error occurred while writing a flight on file CSV", e);
+                log.error("An error occurred while writing a flight to the CSV file", e);
                 throw e;
             }
         }
@@ -79,8 +85,6 @@ public class FlightManager {
         if (toRemove != null) {
             flights.remove(toRemove);
             saveAllFlights();
-        } else {
-            System.out.println("Flight" + flightNumber + " not found.");
         }
     }
 
@@ -88,7 +92,7 @@ public class FlightManager {
         Flight flight = getFlightByNumber(flightNumber);
         if (flight != null) {
             flight.updateFlightStatus(newDepartureTime, newArrivalTime, updateMessage, type);
-            System.out.println("Flight " + flightNumber + " status changed, now departure time is  " + newDepartureTime +
+            System.out.println("Flight " + flightNumber + " status changed, now departure time is " + newDepartureTime +
                     " and arrival time is " + newArrivalTime);
             saveAllFlights();
         }
@@ -97,7 +101,8 @@ public class FlightManager {
     private void saveAllFlights() throws IOException {
         List<String[]> records = new ArrayList<>();
         // Header
-        records.add(new String[]{"flightNumber", "departureAirportCode", "arrivalAirportCode", "departureTime", "arrivalTime"});
+        records.add(new String[]{"flightNumber", "departureAirportCode", "arrivalAirportCode", "departureTime", "arrivalTime",
+                "economySeats", "businessSeats", "firstSeats"});
         // Dati da aggiungere
         for (Flight flight : flights) {
             records.add(new String[]{
@@ -105,14 +110,17 @@ public class FlightManager {
                     flight.getDepartureAirportCode(),
                     flight.getArrivalAirportCode(),
                     String.valueOf(flight.getDepartureTime()),
-                    String.valueOf(flight.getArrivalTime())
+                    String.valueOf(flight.getArrivalTime()),
+                    String.valueOf(flight.getEconomySeats()),
+                    String.valueOf(flight.getBusinessSeats()),
+                    String.valueOf(flight.getFirstSeats())
             });
         }
 
         try {
             csvManager.writeAll(records, csvFilePath);
         } catch (IOException e) {
-            log.error("An error occurred while saving flights on file CSV: " + e.getMessage());
+            log.error("An error occurred while saving flights to the CSV file: " + e.getMessage());
             throw e;
         }
     }

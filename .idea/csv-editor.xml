@@ -24,6 +24,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/csv/luggages.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/csv/passengers.csv">
           <value>
             <Attribute>
@@ -81,6 +88,13 @@
           </value>
         </entry>
         <entry key="/src/main/resources/csv/flights.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/src/main/resources/csv/luggages.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

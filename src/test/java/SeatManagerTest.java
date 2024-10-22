@@ -20,7 +20,7 @@ public class SeatManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks loading seats from the file CSV")
+    @DisplayName("Test that checks loading seats from the CSV file")
     public void testLoadSeatsFromCSV() {
         List<Seat> seats = seatManager.getAllSeats();
 
@@ -38,7 +38,7 @@ public class SeatManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks adding a new seat works correctly and after addition the file CSV is updated")
+    @DisplayName("Test that checks if adding a new seat works correctly and that the CSV file is updated after addition")
     public void testAddSeat() throws IOException {
         Seat newSeat = new Seat("1A", "Economy", "F002", true);
 
@@ -70,7 +70,7 @@ public class SeatManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks updating a seat availability works correctly")
+    @DisplayName("Test that checks updating a seat's availability works correctly")
     public void testUpdateSeatAvailability() throws IOException {
         Seat seat = new Seat("12A", "Economy", "F008", true);
         seatManager.addSeat(seat);
@@ -82,7 +82,7 @@ public class SeatManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks the booking process of a seat")
+    @DisplayName("Test that checks the booking process for a seat")
     public void testBookSeat() throws IOException {
         Seat seat = new Seat("12B", "Economy", "F008", true);
         seatManager.addSeat(seat);
@@ -103,7 +103,7 @@ public class SeatManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks the search of available seats on a specific flight")
+    @DisplayName("Test that checks the search for available seats on a specific flight")
     public void testFindAvailableSeats() {
         List<Seat> availableSeats = seatManager.findAvailableSeats("F001");
         assertEquals(2, availableSeats.size());
@@ -111,7 +111,7 @@ public class SeatManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks the available seats with their class types ")
+    @DisplayName("Test that checks the available seats along with their class types ")
     public void testGetAvailableSeatsWithClassType() {
         Map<String, String> availableSeatsMap = seatManager.getAvailableSeatsWithClassType("F001");
         assertEquals(2, availableSeatsMap.size());

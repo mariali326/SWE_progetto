@@ -13,9 +13,9 @@ import java.util.List;
 
 public class PaymentManager {
     private static final Log log = LogFactory.getLog(PaymentManager.class);
-    private CSVManager csvManager;
-    private List<Payment> payments;
-    private String csvFilePath = "csv/payments.csv";
+    private final CSVManager csvManager;
+    private final List<Payment> payments;
+    private final String csvFilePath = "csv/payments.csv";
 
     public PaymentManager() throws IOException {
         // Viene caricato il file CSV dal classpath
@@ -63,7 +63,7 @@ public class PaymentManager {
         try {
             csvManager.appendRecord(record, csvFilePath);
         } catch (IOException e) {
-            log.error("An error occurred while writing a payment on file CSV", e);
+            log.error("An error occurred while writing a payment to the CSV file", e);
             throw e;
         }
     }
@@ -103,20 +103,9 @@ public class PaymentManager {
         try {
             csvManager.writeAll(records, csvFilePath);
         } catch (IOException e) {
-            log.error("An error occurred while saving payments on file CSV: " + e.getMessage());
+            log.error("An error occurred while saving payments to the CSV file: " + e.getMessage());
             throw e;
         }
-    }
-
-    public void updatePayment(Payment updatedPayment) throws IOException {
-        for (int i = 0; i < payments.size(); i++) {
-            Payment payment = payments.get(i);
-            if (payment.getPaymentId().equalsIgnoreCase(updatedPayment.getPaymentId())) {
-                payments.set(i, updatedPayment);
-                break;
-            }
-        }
-        saveAllPayments();
     }
 
     public List<Payment> getAllPayments() {
