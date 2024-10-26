@@ -1,8 +1,8 @@
 username,name,surname,email,phoneNumber,password,notificationTypes,notificationChannel,paymentMethod,documentType,documentId
-jdoe,John,Doe,jdoe@example.com,+1 3271555555,pass123,,EMAIL,CREDIT_CARD,ID CARD,ID0123456
+jdoe,John,Doe,jdoe@example.com,,pass123,,EMAIL,CREDIT_CARD,ID CARD,ID0123456
 ajohnson,Alice,Johnson,ajohnson@example.com,,pass456,DELAY,EMAIL,PAYPAL,PASSPORT,PS1234567
 mwhite,Mary,White,mwhite@example.com,+1 3478888888,pass789,GATE_CHANGE-DELAY,SMS-EMAIL,DEBIT_CARD,ID CARD,ID2468022
-richardroe,Richard,Roe,richardroe@example.com,+44 9876543210,password789,,EMAIL,BANK_TRANSFER,PASSPORT,PS123G456
+rroe,Richard,Roe,richardroe@example.com,,password789,,EMAIL,BANK_TRANSFER,PASSPORT,PS123G456
 jsmith,Jane,Smith,jsmith@example.com,,password145,CANCELLATION,EMAIL,CREDIT_CARD,ID CARD,ID123H456
 bbrown,Bob,Brown,bbrown@example.com,,pass01234,,,PAYPAL,ID CARD,ID1357900
 smorini,Samanta,Morini,smorini@example.com,+39 3289999999,pass45678,SPECIAL_OFFER,SMS,BANK_TRANSFER,PASSPORT,PS2468222

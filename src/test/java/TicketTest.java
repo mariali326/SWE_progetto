@@ -35,13 +35,13 @@ public class TicketTest {
         assertEquals("Laura", ticket.getPassengerName());
         assertEquals("Felice", ticket.getPassengerSurname());
         assertEquals(luggageList, ticket.getLuggageList());
-        assertEquals("ID CARD",ticket.getDocumentType());
-        assertEquals("ID135678909",ticket.getDocumentId());
+        assertEquals("ID CARD", ticket.getDocumentType());
+        assertEquals("ID135678909", ticket.getDocumentId());
     }
 
     @Test
     @DisplayName("Test that checks the toString() method returns the right string format")
-    public void TestToString() {
+    public void testToString() {
         String ticketNumber = "T021";
         String bookingId = "BK021";
         String flightNumber = "F002";

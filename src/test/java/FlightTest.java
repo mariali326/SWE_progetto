@@ -94,7 +94,7 @@ public class FlightTest {
 
         String expectedString = "F009 - JFK to LAX | Departure: " + departure + " | Arrival: " + arrival + " | Economy Seats: " + 250
                 + " | Business Seats: " + 50
-                + " | First Class Seats: " + 10;;
+                + " | First Class Seats: " + 10;
         assertEquals(expectedString, flight.toString());
     }
 

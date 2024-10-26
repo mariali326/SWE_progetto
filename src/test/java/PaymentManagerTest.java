@@ -21,8 +21,8 @@ public class PaymentManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks loading a payment from the CSV file")
-    public void testLoadPaymentFromCSV() {
+    @DisplayName("Test that checks loading payments from the CSV file and verifies that it's possible to find a payment listed in the file")
+    public void testLoadPaymentsFromCSV() {
         List<Payment> payments = paymentManager.getAllPayments();
 
         assertNotNull(payments);

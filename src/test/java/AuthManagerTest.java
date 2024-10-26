@@ -78,7 +78,7 @@ public class AuthManagerTest {
         boolean updateResult = authManager.updateUser("updateUser", "newPassword", "newEmail@example.com");
         assertTrue(updateResult);
 
-        Map<String,User> users = authManager.getUsers();
+        Map<String, User> users = authManager.getUsers();
         User user = users.get("updateUser");
         assertEquals("newPassword", user.getPassword());
         assertEquals("newEmail@example.com", user.getEmail());
@@ -95,8 +95,8 @@ public class AuthManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks loading users from the CSV file works correctly")
-    public void testLoadUserFromCSV() {
+    @DisplayName("Test that checks loading users from the CSV file works correctly and verifies that it's possible to find a user listed in the file")
+    public void testLoadUsersFromCSV() {
 
         assertNotNull(authManager.getUsers());
         assertFalse(authManager.getUsers().isEmpty());

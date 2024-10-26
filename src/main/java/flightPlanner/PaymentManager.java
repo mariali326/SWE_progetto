@@ -30,7 +30,7 @@ public class PaymentManager {
 
     private void loadPayments() throws IOException {
         List<String[]> records = csvManager.readAll();
-        // Si salta l'header
+        // Si salta header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
             Payment payment = new Payment(
@@ -57,7 +57,7 @@ public class PaymentManager {
                 payment.getBookingId(),
                 String.valueOf(payment.getAmountPayed()),
                 payment.getPaymentDate().toString(),
-                payment.getPaymentMethod().name(),  // Converte l'enum in stringa
+                payment.getPaymentMethod().name(),  // Converte enum in stringa
                 payment.getPassengerUsername()
         };
         try {
@@ -95,7 +95,7 @@ public class PaymentManager {
                     payment.getBookingId(),
                     String.valueOf(payment.getAmountPayed()),
                     payment.getPaymentDate().toString(),
-                    payment.getPaymentMethod().name(),  // Converte l'enum in stringa
+                    payment.getPaymentMethod().name(),  // Converte enum in stringa
                     payment.getPassengerUsername()
 
             });

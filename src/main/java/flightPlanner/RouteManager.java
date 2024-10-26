@@ -68,7 +68,7 @@ public class RouteManager {
 
     private void loadRoutes() throws IOException {
         List<String[]> records = csvManager.readAll();
-        // Si salta l'header
+        // Si salta header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
             Route route = new Route(

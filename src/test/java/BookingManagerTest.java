@@ -21,8 +21,8 @@ public class BookingManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks loading booking from the CSV file")
-    public void testLoadBookingFromCSV() {
+    @DisplayName("Test that checks loading bookings from the CSV file and verifies that it's possible to find a booking listed in the file")
+    public void testLoadBookingsFromCSV() {
         List<Booking> bookings = bookingManager.getAllBookings();
 
         assertNotNull(bookings);

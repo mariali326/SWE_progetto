@@ -285,6 +285,10 @@ public class FlightPlanner {
         return bookingManager.getBookingsForPassenger(username);
     }
 
+    public List<Booking> getAllBookings(){
+        return bookingManager.getAllBookings();
+    }
+
     public void addRoute(Route route) throws IOException {
         routeManager.addRoute(route);
         System.out.println("Route added: " + route);
@@ -317,6 +321,10 @@ public class FlightPlanner {
 
     public Route getRouteByAirportsCode(String departureCode, String arrivalCode) {
         return routeManager.getRouteByAirportsCode(departureCode, arrivalCode);
+    }
+
+    public List<Route> getAllRoutes(){
+        return routeManager.getAllRoutes();
     }
 
     public boolean checkRouteNotExistence(String routeId) {
@@ -394,7 +402,7 @@ public class FlightPlanner {
                 seatCount++;
             }
         }
-        System.out.println("Flight " + flightNumber + " has already registered " + seatCount + " " + classType + " seats in file CSV.");
+        System.out.println("Flight " + flightNumber + " has already registered " + seatCount + " " + classType + " seats in CSV file.");
         return seatCount;
     }
 
@@ -476,15 +484,19 @@ public class FlightPlanner {
     }
 
     // Usato quando si effettua un pagamento per cambiare posto
-    public void updateTicketSeatPrice(String ticketNumber, String newSeatNumber, double newPrice) throws IOException {
+    public void updateTicketSeatPrice(String ticketNumber, String newSeatNumber, double newSeatPrice) throws IOException {
         Ticket ticket = ticketManager.getTicketByNumber(ticketNumber);
-        double originalPrice = ticket.getPrice();
+        double originalTicketPrice = ticket.getPrice();
+        String originalClassType = getSeatClass(ticket.getSeatNumber(), ticket.getFlightNumber());
+        double originalSeatPrice = getPrice(ticket.getFlightNumber(),originalClassType);
+        double newPrice = originalTicketPrice - originalSeatPrice + newSeatPrice;
+
         Booking booking = bookingManager.getBookingById(ticket.getBookingId());
         if (booking != null) {
             ticket.setPrice(newPrice);
             ticket.setSeatNumber(newSeatNumber);
             ticketManager.updateTicket(ticketNumber);
-            booking.setTotalAmount(booking.getTotalAmount() - originalPrice + newPrice);
+            booking.setTotalAmount(booking.getTotalAmount() - originalTicketPrice + newPrice);
             bookingManager.updateBooking(booking);
         }
     }
@@ -675,6 +687,10 @@ public class FlightPlanner {
         for (Luggage luggage : luggageList) {
             luggageManager.removeLuggage(luggage.getLuggageId());
         }
+    }
+
+    public List<Luggage> getAllLuggage(){
+        return luggageManager.getAllLuggage();
     }
 
     public boolean isWithin24HoursOfBooking(String bookingId, LocalDateTime currentTime) {

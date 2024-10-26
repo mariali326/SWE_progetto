@@ -29,7 +29,7 @@ public class PassengerManager {
     private List<Passenger> loadPassengers() throws IOException {
         List<String[]> records = csvManager.readAll();
         List<Passenger> passengers = new ArrayList<>();
-        // Si salta l'header
+        // Si salta header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
             Passenger passenger = new Passenger(

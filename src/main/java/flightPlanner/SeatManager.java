@@ -32,7 +32,7 @@ public class SeatManager {
 
     private void loadSeats() throws IOException {
         List<String[]> records = csvManager.readAll();
-        // Si salta l'header
+        // Si salta header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
             Seat seat = new Seat(
@@ -124,7 +124,7 @@ public class SeatManager {
             seat.releaseSeat();
             saveAllSeats();
             updateSeatAvailability(seatNumber, flightNumber, true);
-            //System.out.println("Seat " + seatNumber + " successfully released and it's now available.");
+            //System.out.println("Seat " + seatNumber + " successfully released, and it's now available.");
         } else {
             System.out.println("Seat " + seatNumber + " is already available or doesn't exist.");
         }

@@ -128,7 +128,7 @@ public class AuthManager {
 
     private void loadUsersFromCSV() throws IOException {
         List<String[]> records = csvManager.readAll();
-        // Salta l'header
+        // Salta header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
             String username = record[0];

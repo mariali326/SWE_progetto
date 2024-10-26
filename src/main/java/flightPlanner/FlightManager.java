@@ -31,7 +31,7 @@ public class FlightManager {
     private List<Flight> loadFlights() throws IOException {
         List<String[]> records = csvManager.readAll();
         List<Flight> flights = new ArrayList<>();
-        // Si salta l'header
+        // Si salta header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
             Flight flight = new Flight(

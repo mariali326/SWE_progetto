@@ -20,7 +20,7 @@ public class SeatManagerTest {
     }
 
     @Test
-    @DisplayName("Test that checks loading seats from the CSV file")
+    @DisplayName("Test that checks loading seats from the CSV file and verifies that it's possible to find a seat listed in the file")
     public void testLoadSeatsFromCSV() {
         List<Seat> seats = seatManager.getAllSeats();
 
@@ -107,7 +107,7 @@ public class SeatManagerTest {
     public void testFindAvailableSeats() {
         List<Seat> availableSeats = seatManager.findAvailableSeats("F001");
         assertEquals(2, availableSeats.size());
-        assertEquals("6B", availableSeats.get(0).getSeatNumber());
+        assertEquals("6B", availableSeats.getFirst().getSeatNumber());
     }
 
     @Test

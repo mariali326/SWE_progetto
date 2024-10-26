@@ -8,7 +8,7 @@ public class AirportTest {
 
     @Test
     @DisplayName("Test that checks the creation of an airport")
-    public void AirportCreation() {
+    public void testAirportCreation() {
         String code = "WI";
         String name = "Wonderland International";
         String city = "Far Away";
@@ -24,7 +24,7 @@ public class AirportTest {
 
     @Test
     @DisplayName("Test that checks the toString() method returns the correct string format")
-    public void TestToString() {
+    public void testToString() {
         String code = "WI";
         String name = "Wonderland International";
 

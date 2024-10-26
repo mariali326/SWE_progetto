@@ -10,10 +10,11 @@ public class Passenger extends User implements Observer {
     private String name;
     private String surname;
     private String phoneNumber; // Facoltativo
-    private NotificationPreferences preferences;
+    private final NotificationPreferences preferences;
     private PaymentMethod paymentMethod;
     private String documentType;
     private String documentId;
+    private final List<String> notifications = new ArrayList<>();
 
     public Passenger(String username, String name, String surname, String email, String phoneNumber, String password,
                      Set<NotificationType> notificationTypes, List<NotificationChannel> channels, PaymentMethod paymentMethod, String documentType, String documentId) {
@@ -48,11 +49,6 @@ public class Passenger extends User implements Observer {
 
     public NotificationPreferences getPreferences() {
         return preferences;
-    }
-
-    public void setPreferences(NotificationPreferences preferences) {
-        this.preferences = preferences;
-        updatePreferences(getPreferredTypes(), getChannels());
     }
 
     public String getPhoneNumber() {
@@ -135,6 +131,10 @@ public class Passenger extends User implements Observer {
         }
     }
 
+    public List<String> getNotifications() {
+        return notifications;
+    }
+
     @Override
     // Update per ricevere notifiche
     public void update(String message, NotificationType type) {
@@ -148,6 +148,7 @@ public class Passenger extends User implements Observer {
             if (preferences.isPreferred(type)) {
                 for (NotificationChannel channel : preferences.getChannels()) {
                     channel.sendNotification(message, this);
+                    notifications.add(message);
                 }
             }
         }
@@ -162,6 +163,7 @@ public class Passenger extends User implements Observer {
             // Inviare tramite Email di default
             NotificationChannel defaultChannel = new EmailNotification();
             defaultChannel.sendNotification(message, this);
+            notifications.add(message);
         }
 
     }

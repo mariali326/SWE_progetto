@@ -56,7 +56,7 @@ public class FlightSearchServiceTest {
         List<Flight> result = flightSearchService.searchFlights("New York", "LAX", searchDate);
 
         assertEquals(1, result.size());
-        assertEquals("F001", result.get(0).getFlightNumber());
+        assertEquals("F001", result.getFirst().getFlightNumber());
     }
 
     @Test

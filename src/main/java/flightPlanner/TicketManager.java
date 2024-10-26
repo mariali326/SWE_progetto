@@ -29,7 +29,7 @@ public class TicketManager {
 
     private void loadTickets(LuggageManager luggageManager) throws IOException {
         List<String[]> records = csvManager.readAll();
-        // Si salta l'header
+        // Si salta header
         for (int i = 1; i < records.size(); i++) {
             String[] record = records.get(i);
 

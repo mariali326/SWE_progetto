@@ -27,7 +27,7 @@ public class RouteTest {
 
     @Test
     @DisplayName("Test that checks the toString() method returns the right string format")
-    public void TestToString() {
+    public void testToString() {
         Duration flightDuration = Duration.ofHours(1).plusMinutes(30);
         Route route = new Route("R008", "MXP", "CDG", 801, flightDuration);
 

@@ -9,7 +9,7 @@ public class Luggage {
     // Costo extra per bagagli oversize
     public static final double EXTRA_COST = 50;
     private final String luggageId;
-    private final String type; // da stiva o a mano
+    private String type; // da stiva o a mano
     private final String ticketNumber;
     private final double weight; //In kg
     private final double cost;
@@ -75,6 +75,10 @@ public class Luggage {
 
     public String getType() {
         return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public double getCost() {

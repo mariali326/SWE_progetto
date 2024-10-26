@@ -1,6 +1,7 @@
 package flightPlanner;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -34,21 +35,38 @@ public class FlightPlannerApp extends Application {
         showLoginScreen();
     }
 
+    public AuthManager getAuthManager(){
+        return authManager;
+    }
+
+    public Stage getPrimaryStage(){
+        return primaryStage;
+    }
+
+    public FlightPlanner getFlightPlanner(){
+        return flightPlanner;
+    }
+
     private void showLoginScreen() {
         VBox vbox = new VBox(10);// Layout verticale con spaziatura di 10 pixel tra gli elementi
         Label titleLabel = new Label("Login");
 
         TextField usernameField = new TextField();
         usernameField.setPromptText("Username");
+        usernameField.setId("usernameField");
 
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Password");
+        passwordField.setId("passwordField");
 
         TextField emailField = new TextField();
         emailField.setPromptText("Email");
+        emailField.setId("emailField");
 
         Button loginButton = new Button("Login");
+        loginButton.setId("loginButton");
         Button registerButton = new Button("Register");
+        registerButton.setId("registerButton");
 
         loginButton.setOnAction(_ -> {
             String username = usernameField.getText();
@@ -122,6 +140,7 @@ public class FlightPlannerApp extends Application {
         }
 
         Button logoutButton = new Button("Logout");
+        logoutButton.setId("logoutButton");
 
         logoutButton.setOnAction(_ -> {
             authManager.logout();
@@ -138,14 +157,20 @@ public class FlightPlannerApp extends Application {
         primaryStage.show();
     }
 
+    public void showAppScreen(){
+        Platform.runLater(this::showMainAppScreen);
+    }
+
     private void showUserInterface(VBox vbox) {
         Label userLabel = new Label("Passenger Label");
         Label welcomeLabel = new Label("Welcome " + authManager.getLoggedInUser() + " !");
 
         Button viewBookingsButton = new Button("View Bookings");
+        viewBookingsButton.setId("viewBookingsButton");
         viewBookingsButton.setOnAction(_ -> showViewBookings());
 
         Button bookFlightButton = new Button("Book Flight");
+        bookFlightButton.setId("bookFlightButton");
         bookFlightButton.setOnAction(_ -> {
             try {
                 showBookFlight();
@@ -155,12 +180,15 @@ public class FlightPlannerApp extends Application {
         });
 
         Button cancelBookingButton = new Button("Cancel Booking");
+        cancelBookingButton.setId("cancelBookingButton");
         cancelBookingButton.setOnAction(_ -> showCancelBooking());
 
         Button cancelTicketBtn = new Button("Cancel Ticket");
+        cancelTicketBtn.setId("cancelTicketBtn");
         cancelTicketBtn.setOnAction(_ -> showCancelTicket());
 
         Button addLuggageButton = new Button("Add additional Luggage");
+        addLuggageButton.setId("addLuggageButton");
         addLuggageButton.setOnAction(_ -> {
             try {
                 showAddLuggageForm();
@@ -170,6 +198,7 @@ public class FlightPlannerApp extends Application {
         });
 
         Button changeSeatButton = new Button("Change Seat");
+        changeSeatButton.setId("changeSeatButton");
         changeSeatButton.setOnAction(_ -> {
             try {
                 showChangeSeat();
@@ -179,9 +208,11 @@ public class FlightPlannerApp extends Application {
         });
 
         Button searchFlightsButton = new Button("Search Flights");
+        searchFlightsButton.setId("searchFlightsButton");
         searchFlightsButton.setOnAction(_ -> showSearchFlights());
 
         Button manageNotificationsButton = new Button("Manage Notifications");
+        manageNotificationsButton.setId("manageNotificationButton");
         manageNotificationsButton.setOnAction(_ -> {
             try {
                 showManageNotificationsScreen();
@@ -191,12 +222,15 @@ public class FlightPlannerApp extends Application {
         });
 
         Button paymentMethodButton = new Button("Payment Methods");
+        paymentMethodButton.setId("paymentMethodButton");
         paymentMethodButton.setOnAction(_ -> showPaymentMethod());
 
         Button updateUserCredentialsBtn = new Button("Update my credentials");
+        updateUserCredentialsBtn.setId("updateUserCredentialsBtn");
         updateUserCredentialsBtn.setOnAction(_ -> showUpdateCredentials());
 
         Button unsubscribeButton = getUnsubscribeButton();
+        unsubscribeButton.setId("unsubscribeButton");
 
         vbox.getChildren().addAll(userLabel, welcomeLabel, viewBookingsButton, bookFlightButton, cancelBookingButton,
                 cancelTicketBtn, addLuggageButton, changeSeatButton, searchFlightsButton, manageNotificationsButton,
@@ -299,14 +333,17 @@ public class FlightPlannerApp extends Application {
         int cabinLuggageCount = ticket.getCabinLuggageCount();
         int holdLuggageCount = ticket.getHoldLuggageCount();
 
+        if(cabinLuggageCount >= 2 && holdLuggageCount >= 3){
+            showAlert(Alert.AlertType.ERROR,"All Limit Exceeded","You cannot add more any luggage!");
+            return;
+        }
+
         if (cabinLuggageCount >= 2) {
             showAlert(Alert.AlertType.ERROR, "Limit Exceeded", "You cannot add more cabin luggage.");
-            return;
         }
 
         if (holdLuggageCount >= 3) {
             showAlert(Alert.AlertType.ERROR, "Limit Exceeded", "You cannot add more hold luggage.");
-            return;
         }
 
         int possibleCabinLuggageCount = 2 - cabinLuggageCount;
@@ -341,8 +378,8 @@ public class FlightPlannerApp extends Application {
             double length;
             try {
                 length = Double.parseDouble(lengthStr);
-                if (length < 0 || length > 55) {
-                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum length of the luggage is 55 cm.");
+                if (length < 0 || length > 45) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum length of the luggage is 45 cm.");
                     flightPlanner.removeLuggage(luggageList);
                     return;
                 }
@@ -358,8 +395,8 @@ public class FlightPlannerApp extends Application {
             double width;
             try {
                 width = Double.parseDouble(widthStr);
-                if (width < 0 || width > 45) {
-                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum width of the luggage is 45 cm.");
+                if (width < 0 || width > 35) {
+                    showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum width of the luggage is 35 cm.");
                     flightPlanner.removeLuggage(luggageList);
                     return;
                 }
@@ -406,8 +443,8 @@ public class FlightPlannerApp extends Application {
             double luggageCost = flightPlanner.calculateLuggageCost(classType, ticket.getFlightNumber(), "cabin", length, width, height, weight, ticket.getCabinLuggageCount() + j + 1, 0);
 
             totalLuggagePrice += luggageCost;
-            Luggage luggage = new Luggage(UUID.randomUUID().toString(), weight, "cabin", luggageCost, length, width, height, ticketNumber);
-            ticket.getLuggageList().add(luggage);
+            Luggage luggage = new Luggage(UUID.randomUUID().toString(), weight, null, luggageCost, length, width, height, ticketNumber);
+            luggage.setType("cabin");
             luggageList.add(luggage);
             flightPlanner.addLuggage(luggage);
         }
@@ -502,16 +539,19 @@ public class FlightPlannerApp extends Application {
             double luggageCost = flightPlanner.calculateLuggageCost(classType, ticket.getFlightNumber(), "hold", length, width, height, weight, 0, ticket.getHoldLuggageCount() + j + 1);
 
             totalLuggagePrice += luggageCost;
-            Luggage luggage = new Luggage(UUID.randomUUID().toString(), weight, "hold", luggageCost, length, width, height, ticketNumber);
+            Luggage luggage = new Luggage(UUID.randomUUID().toString(), weight, null, luggageCost, length, width, height, ticketNumber);
+            luggage.setType("hold");
             luggageList.add(luggage);
             flightPlanner.addLuggage(luggage);
         }
 
         Button payButton = new Button("Pay");
+        payButton.setId("payButton");
         double finalTotalLuggagePrice = totalLuggagePrice;
         payButton.setOnAction(_ -> {
             Payment newPayAfterChoice = new Payment(UUID.randomUUID().toString(), bookingId, finalTotalLuggagePrice, LocalDateTime.now(), loggedInUser.getPaymentMethod(), loggedInUser.getUsername());
             try {
+                ticket.getLuggageList().addAll(luggageList);
                 flightPlanner.addPayment(newPayAfterChoice);
                 flightPlanner.updateTicketPrice(ticketNumber, ticket.getPrice() + finalTotalLuggagePrice);
             } catch (IOException ex) {
@@ -524,6 +564,7 @@ public class FlightPlannerApp extends Application {
 
 
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> {
             try {
                 flightPlanner.removeLuggage(luggageList);
@@ -634,6 +675,7 @@ public class FlightPlannerApp extends Application {
         Passenger loggedInUser = flightPlanner.getPassenger(authManager.getLoggedInUser());
 
         Button changeSeatAndPayButton = new Button("Change Seat and Pay");
+        changeSeatAndPayButton.setId("changeSeatAndPayButton");
 
         Map<String, Integer> classRanking = new HashMap<>();
         classRanking.put("Economy", 1);
@@ -677,6 +719,7 @@ public class FlightPlannerApp extends Application {
             showMainAppScreen();
         });
         Button cancelButton = getCancelButton(ticket, currentBookingSeats);
+        cancelButton.setId("cancelButton");
 
         vBox.getChildren().addAll(changeSeatLabel, changeSeatAndPayButton, cancelButton);
 
@@ -693,7 +736,7 @@ public class FlightPlannerApp extends Application {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            showAlert(Alert.AlertType.ERROR, "Cancelled", "You didn't finish your modification or payment. Your changing has been cancelled.");
+            showAlert(Alert.AlertType.ERROR, "Cancelled", "You didn't finish your modification or the payment. Your changing has been cancelled.");
             showMainAppScreen();
         });
         return cancelButton;
@@ -710,6 +753,7 @@ public class FlightPlannerApp extends Application {
         Label emailLabel = new Label("New Email:");
         GridPane.setConstraints(emailLabel, 0, 0);// Serve per posizionare in una determinata cella cxr
         TextField emailInput = new TextField(loginUser.getEmail());
+        emailInput.setId("emailInput");
         emailInput.setPromptText("Enter new email");
         emailInput.setText(authManager.getLoggedInUserEmail());// Se l'utente inizia a digitare, appare il testo di prompt
         GridPane.setConstraints(emailInput, 1, 0);
@@ -717,18 +761,21 @@ public class FlightPlannerApp extends Application {
         Label oldPasswordLabel = new Label("Old Password:");
         GridPane.setConstraints(oldPasswordLabel, 0, 1);
         PasswordField oldPasswordInput = new PasswordField();
+        oldPasswordInput.setId("oldPasswordInput");
         oldPasswordInput.setPromptText("Enter your old password");
         GridPane.setConstraints(oldPasswordInput, 1, 1);
 
         Label newPasswordLabel = new Label("New Password:");
         GridPane.setConstraints(newPasswordLabel, 0, 2);
         PasswordField newPasswordInput = new PasswordField();
+        newPasswordInput.setId("newPasswordInput");
         newPasswordInput.setPromptText("Enter new password");
         GridPane.setConstraints(newPasswordInput, 1, 2);
 
         Label confirmPasswordLabel = new Label("Confirm Password:");
         GridPane.setConstraints(confirmPasswordLabel, 0, 3);
         PasswordField confirmPasswordInput = new PasswordField();
+        confirmPasswordInput.setId("confirmPasswordInput");
         confirmPasswordInput.setPromptText("Re-enter new password");
         GridPane.setConstraints(confirmPasswordInput, 1, 3);
 
@@ -737,7 +784,8 @@ public class FlightPlannerApp extends Application {
         newPasswordInput.setPrefWidth(300);
 
         Button updateButton = new Button("Update");
-        GridPane.setConstraints(updateButton, 0, 4);
+        updateButton.setId("updateButton");
+        GridPane.setConstraints(updateButton, 1, 4);
 
         updateButton.setOnAction(_ -> {
             String newEmail = emailInput.getText();
@@ -756,6 +804,7 @@ public class FlightPlannerApp extends Application {
 
             if (!newEmail.matches("^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$")) {
                 showAlert(Alert.AlertType.ERROR, "Invalid Email", "Please provide a valid email address.");
+                emailInput.clear();
                 return;
             }
 
@@ -767,20 +816,24 @@ public class FlightPlannerApp extends Application {
             if (!oldPassword.equals(authManager.getLoggedInUserPassword())) {
                 showAlert(Alert.AlertType.ERROR, "Input Error",
                         "Old password is incorrect. Provide the correct password to update your credentials");
+                oldPasswordInput.clear();
                 return;
             }
 
             if (!newPassword.equals(confirmPassword)) {
                 showAlert(Alert.AlertType.ERROR, "Password Mismatch", "New passwords do not match.");
+                newPasswordInput.clear();
+                confirmPasswordInput.clear();
                 return;
             }
 
             if (newPassword.length() < 6) {
                 showAlert(Alert.AlertType.ERROR, "Invalid Password", "Password must be at least 6 characters long.");
+                newPasswordInput.clear();
+                confirmPasswordInput.clear();
                 return;
             }
 
-            updateButton.setDisable(true);
             try {
                 boolean success = authManager.updateUser(authManager.getLoggedInUser(), newPassword, newEmail);
                 if (success) {
@@ -799,13 +852,16 @@ public class FlightPlannerApp extends Application {
                         " , actual password: " + authManager.getLoggedInUserPassword() + "| new password: "
                         + newPassword + ", actual email: " + authManager.getLoggedInUserEmail() + "| new email: " + newEmail);
                 showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while updating your credentials.");
-            } finally {
-                updateButton.setDisable(false);
             }
+
+            oldPasswordInput.clear();
+            newPasswordInput.clear();
+            confirmPasswordInput.clear();
         });
 
         Button backButton = new Button("Back");
-        GridPane.setConstraints(backButton, 1, 4);
+        backButton.setId("backButton");
+        GridPane.setConstraints(backButton, 0, 4);
         backButton.setOnAction(_ -> showMainAppScreen());
 
         grid.getChildren().addAll(emailLabel, emailInput, oldPasswordLabel, oldPasswordInput, newPasswordLabel, newPasswordInput,
@@ -895,7 +951,7 @@ public class FlightPlannerApp extends Application {
                 Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);// Aspetta che il precedente alert venga chiuso
                 infoAlert.setTitle("Important Information");
                 infoAlert.setHeaderText("Don't worry for your refund!");
-                infoAlert.setContentText("Refund of 40% (" + refundAmount + "EUR excluding luggage cost) for ticket " + ticketNumber + " has been processed automatically.");
+                infoAlert.setContentText("Refund of 40% (" + refundAmount + " EUR excluding luggage cost) for ticket " + ticketNumber + " has been processed automatically.");
                 infoAlert.showAndWait();
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -957,7 +1013,7 @@ public class FlightPlannerApp extends Application {
                 Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);
                 infoAlert.setTitle("Important Information");
                 infoAlert.setHeaderText("Don't worry for your refund!");
-                infoAlert.setContentText("Refund of 40% (" + refundAmount + "EUR excluding luggage cost) for booking " + bookingId + " has been processed automatically.");
+                infoAlert.setContentText("Refund of 40% (" + refundAmount + " EUR excluding luggage cost) for booking " + bookingId + " has been processed automatically.");
                 System.out.println("Refund of 40% (" + refundAmount + " EUR excluding luggage cost) for booking " + bookingId + " has been processed.");
                 infoAlert.showAndWait();
             } catch (IOException ex) {
@@ -1312,8 +1368,8 @@ public class FlightPlannerApp extends Application {
                 double length;
                 try {
                     length = Double.parseDouble(lengthStr);
-                    if (length < 0 || length > 55) {
-                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum length of the luggage is 55 cm.");
+                    if (length < 0 || length > 45) {
+                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum length of the luggage is 45 cm.");
                         flightPlanner.cancelCurrentTickets(tickets);
                         flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
                         flightPlanner.removeLuggage(allLuggage);
@@ -1333,8 +1389,8 @@ public class FlightPlannerApp extends Application {
                 double width;
                 try {
                     width = Double.parseDouble(widthStr);
-                    if (width < 0 || width > 45) {
-                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum width of the luggage is 45 cm.");
+                    if (width < 0 || width > 35) {
+                        showAlert(Alert.AlertType.ERROR, "Invalid input", "The maximum width of the luggage is 35 cm.");
                         flightPlanner.cancelCurrentTickets(tickets);
                         flightPlanner.releaseSeatsForCurrentBooking(flightNumber, currentBookingSeats);
                         flightPlanner.removeLuggage(allLuggage);
@@ -1542,6 +1598,7 @@ public class FlightPlannerApp extends Application {
 
         Label paymentLabel = new Label("Payment Process:");
         Button payButton = new Button("Pay");
+        payButton.setId("payButton");
         payButton.setDisable(true);  // Disabilitato fino a quando non viene selezionato un metodo di pagamento
         String paymentId = UUID.randomUUID().toString();
 
@@ -1561,7 +1618,7 @@ public class FlightPlannerApp extends Application {
                     throw new RuntimeException(ex);
                 }
                 showMainAppScreen();
-                showAlert(Alert.AlertType.INFORMATION, "Success", " Payment successful with " + mainPassenger.getPaymentMethod() + "!");
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Payment successful with " + mainPassenger.getPaymentMethod() + "!");
             });
         } else {
             ChoiceDialog<String> paymentMethodDialog = new ChoiceDialog<>("CREDIT_CARD", "DEBIT_CARD", "PAYPAL", "BANK_TRANSFER");
@@ -1600,7 +1657,19 @@ public class FlightPlannerApp extends Application {
                 return;
             }
         }
+        Button cancelButton = getCancelBookingFlightButton(bookingId, mainPassenger);
+
+        vbox.getChildren().addAll(paymentLabel, payButton, cancelButton);
+
+        Scene scene = new Scene(vbox, 400, 400);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+        primaryStage.setTitle("New Flight Booking");
+    }
+
+    private Button getCancelBookingFlightButton(String bookingId, Passenger mainPassenger) {
         Button cancelButton = new Button("Cancel Booking");
+        cancelButton.setId("cancelButton");
         cancelButton.setOnAction(_ -> {
             try {
                 flightPlanner.cancelBooking(bookingId, mainPassenger);
@@ -1611,13 +1680,7 @@ public class FlightPlannerApp extends Application {
             showAlert(Alert.AlertType.INFORMATION, "Cancelled", "You didn't finish the payment. Your booking has been cancelled.");
 
         });
-
-        vbox.getChildren().addAll(paymentLabel, payButton, cancelButton);
-
-        Scene scene = new Scene(vbox, 400, 400);
-        primaryStage.setScene(scene);
-        primaryStage.show();
-        primaryStage.setTitle("New Flight Booking");
+        return cancelButton;
     }
 
     private void showSearchFlights() {
@@ -1633,6 +1696,7 @@ public class FlightPlannerApp extends Application {
         }
 
         TextArea resultArea = new TextArea();
+        resultArea.setId("resultTextArea");
         resultArea.setEditable(false);
 
         TextInputDialog arrivalDialog = new TextInputDialog();
@@ -1714,7 +1778,9 @@ public class FlightPlannerApp extends Application {
     private void showViewBookings() {
         VBox vbox = new VBox(10);
         Label titleLabel = new Label("My bookings");
+        titleLabel.setId("titleLabel");
         TextArea resultArea = new TextArea();
+        resultArea.setId("resultArea");
         resultArea.setEditable(false);
         List<Booking> bookings = flightPlanner.getBookingsForPassenger(authManager.getLoggedInUser());
         if (bookings.isEmpty()) {
@@ -1753,6 +1819,7 @@ public class FlightPlannerApp extends Application {
             resultArea.setText(bookingsText.toString());
         }
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         vbox.getChildren().addAll(titleLabel, resultArea, backButton);
@@ -1767,10 +1834,12 @@ public class FlightPlannerApp extends Application {
         Label titleLabel = new Label("Payment Method Settings");
 
         ComboBox<PaymentMethod> payMethodComboBox = new ComboBox<>();
+        payMethodComboBox.setId("payMethodComboBox");
         payMethodComboBox.getItems().addAll(PaymentMethod.values());
         payMethodComboBox.setPromptText("Select Payment Method");
 
         Button confirmButton = new Button("Confirm");
+        confirmButton.setId("confirmButton");
         confirmButton.setOnAction(_ -> {
             PaymentMethod selectedPaymentMethod = payMethodComboBox.getValue();
             Passenger passenger = flightPlanner.getPassenger(authManager.getLoggedInUser());
@@ -1798,6 +1867,7 @@ public class FlightPlannerApp extends Application {
         });
 
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         vbox.getChildren().addAll(titleLabel, payMethodComboBox, confirmButton, backButton);
@@ -1813,15 +1883,22 @@ public class FlightPlannerApp extends Application {
         Label subTitleLabel1 = new Label("Preferred Types");
 
         CheckBox gateChangeCheckBox = new CheckBox("Gate Change");
+        gateChangeCheckBox.setId("gateChangeCheckBox");
         CheckBox cancellationCheckBox = new CheckBox("Cancellation");
+        cancellationCheckBox.setId("cancellationCheckBox");
         CheckBox specialOfferCheckBox = new CheckBox("Special Offers");
+        specialOfferCheckBox.setId("specialOfferCheckBox");
         CheckBox delayCheckBox = new CheckBox("Delay");
+        delayCheckBox.setId("delayCheckBox");
 
         Label subTitleLabel2 = new Label("Preferred Channels");
         CheckBox emailCheckBox = new CheckBox("Email");
+        emailCheckBox.setId("emailCheckBox");
         CheckBox smsCheckBox = new CheckBox("SMS");
+        smsCheckBox.setId("smsCheckBox");
 
         TextField phoneNumberField = new TextField();
+        phoneNumberField.setId("phoneNumberField");
         phoneNumberField.setPromptText("Phone Number");
         phoneNumberField.setDisable(true);  // Disattivo per default
 
@@ -1857,6 +1934,7 @@ public class FlightPlannerApp extends Application {
         }
 
         Button saveButton = new Button("Save");
+        saveButton.setId("saveButton");
         saveButton.setOnAction(_ -> {
             // Collezionare i tipi di notificazione selezionati
             Set<NotificationType> types = new HashSet<>();
@@ -1913,6 +1991,7 @@ public class FlightPlannerApp extends Application {
         });
 
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         vbox.getChildren().addAll(titleLabel, subTitleLabel1, gateChangeCheckBox, cancellationCheckBox, delayCheckBox,
@@ -1927,33 +2006,43 @@ public class FlightPlannerApp extends Application {
         Label adminLabel = new Label("Admin Panel");
 
         Button viewFlightsButton = new Button("View Flights");
+        viewFlightsButton.setId("viewFlightsButton");
         viewFlightsButton.setOnAction(_ -> showFlightList());
 
         Button viewPassengersButton = new Button("View Passengers");
+        viewPassengersButton.setId("viewPassengersButton");
         viewPassengersButton.setOnAction(_ -> showPassengersList());
 
         Button addFlightButton = new Button("Add Flight");
+        addFlightButton.setId("addFlightButton");
         addFlightButton.setOnAction(_ -> showAddFlightForm());
 
         Button removeFlightButton = new Button("Remove Flight");
+        removeFlightButton.setId("removeFlightButton");
         removeFlightButton.setOnAction((_ -> showRemoveFlightForm()));
 
         Button updateFlightStatusButton = new Button("Update Flight Status");
+        updateFlightStatusButton.setId("updateFlightStatusButton");
         updateFlightStatusButton.setOnAction(_ -> showUpdateFlightStatus());
 
         Button manageSeatsButton = new Button("Manage Seats");
+        manageSeatsButton.setId("manageSeatsButton");
         manageSeatsButton.setOnAction(_ -> showSeatManagementForm());
 
         Button addAirportButton = new Button("Add Airport");
+        addAirportButton.setId("addAirportButton");
         addAirportButton.setOnAction(_ -> showAddAirportForm());
 
         Button removeAirportButton = new Button("Remove Airport");
+        removeAirportButton.setId("removeAirportButton");
         removeAirportButton.setOnAction(_ -> showRemoveAirportForm());
 
         Button addRouteButton = new Button("Add Route");
+        addRouteButton.setId("addRouteButton");
         addRouteButton.setOnAction(_ -> showAddRouteForm());
 
         Button removeRouteButton = new Button("Remove Route");
+        removeRouteButton.setId("removeRouteButton");
         removeRouteButton.setOnAction(_ -> showRemoveRouteForm());
 
 
@@ -1968,8 +2057,10 @@ public class FlightPlannerApp extends Application {
 
         Label routeIdLabel = new Label("Route ID:");
         TextField routeIdField = new TextField();
+        routeIdField.setId("routeIdField");
 
         Button removeRouteButton = new Button("Remove Route");
+        removeRouteButton.setId("removeRouteButton");
         removeRouteButton.setOnAction(_ -> {
             String routeId = routeIdField.getText();
 
@@ -1996,6 +2087,7 @@ public class FlightPlannerApp extends Application {
         });
 
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         routeBox.getChildren().addAll(routeIdLabel, routeIdField, removeRouteButton, backButton);
@@ -2010,20 +2102,26 @@ public class FlightPlannerApp extends Application {
 
         Label routeIdLabel = new Label("Route ID:");
         TextField routeIdField = new TextField();
+        routeIdField.setId("routeIdField");
 
         Label departureAirportLabel = new Label("Departure Airport Code:");
         TextField departureAirportField = new TextField();
+        departureAirportField.setId("departureAirportField");
 
         Label arrivalAirportLabel = new Label("Arrival Airport Code:");
         TextField arrivalAirportField = new TextField();
+        arrivalAirportField.setId("arrivalAirportField");
 
         Label distanceLabel = new Label("Distance (km):");
         TextField distanceField = new TextField();
+        distanceField.setId("distanceField");
 
         Label durationLabel = new Label("Duration (HH:MM):");
         TextField durationField = new TextField();
+        durationField.setId("durationField");
 
         Button addRouteButton = new Button("Add Route");
+        addRouteButton.setId("addRouteButton");
         addRouteButton.setOnAction(_ -> {
             String routeId = routeIdField.getText();
             String departureAirportCode = departureAirportField.getText();
@@ -2035,6 +2133,12 @@ public class FlightPlannerApp extends Application {
                 showAlert(Alert.AlertType.ERROR, "Input Error", "Please fill in all the fields.");
                 return;
             }
+
+            if(flightPlanner.checkAirportNotExistence(departureAirportCode) || flightPlanner.checkAirportNotExistence(arrivalAirportCode)){
+                showAlert(Alert.AlertType.ERROR,"Invalid Input","Check first the existence of the airport.");
+                return;
+            }
+
             try {
                 distance = Double.parseDouble(distanceField.getText());
             } catch (NumberFormatException ex) {
@@ -2068,6 +2172,7 @@ public class FlightPlannerApp extends Application {
         });
 
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         routeBox.getChildren().addAll(routeIdLabel, routeIdField, departureAirportLabel, departureAirportField, arrivalAirportLabel,
@@ -2083,9 +2188,11 @@ public class FlightPlannerApp extends Application {
 
         Label airportCodeLabel = new Label("Airport Code:");
         TextField airportCodeField = new TextField();
+        airportCodeField.setId("airportCodeField");
         airportCodeField.setPromptText("Es. FLR");
 
         Button removeButton = new Button("Remove Airport");
+        removeButton.setId("removeButton");
         removeButton.setOnAction(_ -> {
             String code = airportCodeField.getText();
 
@@ -2111,6 +2218,7 @@ public class FlightPlannerApp extends Application {
         });
 
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         vbox.getChildren().addAll(airportCodeLabel, airportCodeField, removeButton, backButton);
@@ -2125,21 +2233,26 @@ public class FlightPlannerApp extends Application {
 
         Label airportCodeLabel = new Label("Airport Code:");
         TextField airportCodeField = new TextField();
+        airportCodeField.setId("airportCodeField");
         airportCodeField.setPromptText("e.g. FLR");
 
         Label airportNameLabel = new Label("Airport Name:");
         TextField airportNameField = new TextField();
+        airportNameField.setId("airportNameField");
         airportNameField.setPromptText("e.g. Amerigo-Vespucci");
 
         Label cityLabel = new Label("City:");
         TextField cityField = new TextField();
+        cityField.setId("cityField");
         cityField.setPromptText("e.g. Florence");
 
         Label countryLabel = new Label("Country:");
         TextField countryField = new TextField();
+        countryField.setId("countryField");
         countryField.setPromptText("e.g. Italy");
 
         Button addButton = new Button("Add Airport");
+        addButton.setId("addButton");
         addButton.setOnAction(_ -> {
             String code = airportCodeField.getText();
             String name = airportNameField.getText();
@@ -2157,7 +2270,7 @@ public class FlightPlannerApp extends Application {
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
-            showAlert(Alert.AlertType.INFORMATION, "Success", "Airport " + name + " added successfully.");
+            showAlert(Alert.AlertType.INFORMATION, "Success", "Airport " + code + " added successfully.");
 
             airportCodeField.clear();
             airportNameField.clear();
@@ -2166,6 +2279,7 @@ public class FlightPlannerApp extends Application {
         });
 
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         vbox.getChildren().addAll(airportCodeLabel, airportCodeField, airportNameLabel, airportNameField, cityLabel, cityField, countryLabel, countryField, addButton, backButton);
@@ -2180,14 +2294,18 @@ public class FlightPlannerApp extends Application {
 
         Label flightNumberLabel = new Label("Flight Number:");
         TextField flightNumberField = new TextField();
+        flightNumberField.setId("flightNumberField");
 
         Label classTypeLabel = new Label("Class Type (Economy, Business, First):");
         TextField classTypeField = new TextField();
+        classTypeField.setId("classTypeField");
 
         Label priceLabel = new Label("Seat Price:");
         TextField priceField = new TextField();
+        priceField.setId("priceField");
 
         Button addSeatPriceButton = new Button("Upload/Update Seat Price");
+        addSeatPriceButton.setId("addSeatPriceButton");
         addSeatPriceButton.setOnAction(_ -> {
             String flightNumber = flightNumberField.getText();
             String classType = classTypeField.getText();
@@ -2231,11 +2349,14 @@ public class FlightPlannerApp extends Application {
             priceField.clear();
         });
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
         Label seatLabel = new Label("Other Functionality:");
         Button addSeatsToFlightBtn = new Button("Add Seats");
+        addSeatsToFlightBtn.setId("addSeatsToFlightBtn");
         addSeatsToFlightBtn.setOnAction(_ -> showAddSeatsToFlight());
         Button removeSeatsFromFlightBtn = new Button("Remove Seats");
+        removeSeatsFromFlightBtn.setId("removeSeatsFromFlightBtn");
         removeSeatsFromFlightBtn.setOnAction(_ -> showRemoveSeatsFromFlight());
 
 
@@ -2252,13 +2373,16 @@ public class FlightPlannerApp extends Application {
 
         Label flightNumberLabel = new Label("Flight Number:");
         TextField flightNumberField = new TextField();
+        flightNumberField.setId("flightNumberField");
         flightNumberField.setPromptText("Flight Number");
 
         Label seatNumbersLabel = new Label("Seat Numbers to Remove (comma-separated):");
         TextField seatNumbersField = new TextField();
+        seatNumbersField.setId("seatNumbersField");
         seatNumbersField.setPromptText("e.g., 12A, 12B, 13A");
 
         Button removeSeatsButton = new Button("Remove Seats");
+        removeSeatsButton.setId("removeSeatsButton");
 
         removeSeatsButton.setOnAction(_ -> {
             String flightNumber = flightNumberField.getText();
@@ -2295,6 +2419,7 @@ public class FlightPlannerApp extends Application {
             seatNumbersField.clear();
         });
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showSeatManagementForm());
 
         vbox.getChildren().addAll(flightNumberLabel, flightNumberField, seatNumbersLabel, seatNumbersField, removeSeatsButton, backButton);
@@ -2307,17 +2432,21 @@ public class FlightPlannerApp extends Application {
         VBox vbox = new VBox(10);
         Label flightNumberLabel = new Label("Flight Number:");
         TextField flightNumberField = new TextField();
+        flightNumberField.setId("flightNumberField");
         flightNumberField.setPromptText("Enter flight number");
 
         Label seatListLabel = new Label("Seat List (comma-separated):");
         TextField seatListField = new TextField();
+        seatListField.setId("seatListField");
         seatListField.setPromptText("Enter seats (e.g., 13A, 14B)");
 
         Label classTypeLabel = new Label("Class Type (Economy, Business, First):");
         TextField classTypeField = new TextField();
+        classTypeField.setId("classTypeField");
         classTypeField.setPromptText("Enter class type");
 
         Button addSeatsButton = new Button("Add Seats");
+        addSeatsButton.setId("addSeatsButton");
 
         addSeatsButton.setOnAction(_ -> {
             String flightNumber = flightNumberField.getText();
@@ -2369,6 +2498,7 @@ public class FlightPlannerApp extends Application {
             classTypeField.clear();
         });
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showSeatManagementForm());
 
         vbox.getChildren().addAll(flightNumberLabel, flightNumberField, seatListLabel, seatListField, classTypeLabel, classTypeField, addSeatsButton, backButton);
@@ -2383,28 +2513,36 @@ public class FlightPlannerApp extends Application {
 
         Label flightLabel = new Label("Flight Number: ");
         TextField flightNumberField = new TextField();
+        flightNumberField.setId("flightNumberField");
         flightNumberField.setPromptText("Enter Flight Number");
 
         Label departureDateLabel = new Label("New Departure Date and Time: ");
         DatePicker departureDatePicker = new DatePicker();
+        departureDatePicker.setId("departureDatePicker");
         TextField departureTimeField = new TextField();
+        departureTimeField.setId("departureTimeField");
         departureTimeField.setPromptText("New departure Time (HH:MM)");
 
         Label arrivalDateLabel = new Label("New Arrival Date and Time: ");
         DatePicker arrivalDatePicker = new DatePicker();
+        arrivalDatePicker.setId("arrivalDatePicker");
         TextField arrivalTimeField = new TextField();
+        arrivalTimeField.setId("arrivalTimeField");
         arrivalTimeField.setPromptText("New arrival Time (HH:MM)");
 
         TextField updateMsgField = new TextField();
+        updateMsgField.setId("updateMsgField");
         updateMsgField.setPromptText("Update Message");
 
         ComboBox<NotificationType> notificationTypeComboBox = new ComboBox<>();
+        notificationTypeComboBox.setId("notificationTypeComboBox");
         notificationTypeComboBox.getItems().addAll(Arrays.stream(NotificationType.values())
                 .filter(type -> type != NotificationType.CANCELLATION)
                 .toList());
         notificationTypeComboBox.setPromptText("Select Notification Type");
 
         Button updateFlightStatusBtn = new Button("Update Flight Status");
+        updateFlightStatusBtn.setId("updateFlightStatusBtn");
 
         updateFlightStatusBtn.setOnAction(_ -> {
             String flightNumber = flightNumberField.getText();
@@ -2463,6 +2601,7 @@ public class FlightPlannerApp extends Application {
         });
 
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         vBox.getChildren().addAll(flightLabel, flightNumberField, departureDateLabel, departureDatePicker, departureTimeField, arrivalDateLabel, arrivalDatePicker,
@@ -2477,9 +2616,11 @@ public class FlightPlannerApp extends Application {
         Label flightLabel = new Label("Remove Flight");
 
         TextField removeFlightNumberField = new TextField();
+        removeFlightNumberField.setId("removeFlightNumberField");
         removeFlightNumberField.setPromptText("Flight Number");
 
         Button removeFlightBtn = new Button("Remove Flight");
+        removeFlightBtn.setId("removeFlightBtn");
 
         removeFlightBtn.setOnAction(_ -> {
             String flightNumber = removeFlightNumberField.getText();
@@ -2501,6 +2642,7 @@ public class FlightPlannerApp extends Application {
         });
 
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         vBox.getChildren().addAll(flightLabel, removeFlightNumberField, removeFlightBtn, backButton);
@@ -2513,33 +2655,44 @@ public class FlightPlannerApp extends Application {
         Label flightLabel = new Label("Add Flight:");
 
         TextField flightNumberField = new TextField();
+        flightNumberField.setId("flightNumberField");
         flightNumberField.setPromptText("Flight Number");
 
         TextField departureField = new TextField();
+        departureField.setId("departureField");
         departureField.setPromptText("Departure Airport Code");
 
         TextField arrivalField = new TextField();
+        arrivalField.setId("arrivalField");
         arrivalField.setPromptText("Arrival Airport Code");
 
         DatePicker departureDatePicker = new DatePicker();
+        departureDatePicker.setId("departureDatePicker");
 
         TextField departureTimeField = new TextField();
+        departureTimeField.setId("departureTimeField");
         departureTimeField.setPromptText("Departure Time (HH:MM)");
 
         DatePicker arrivalDatePicker = new DatePicker();
+        arrivalDatePicker.setId("arrivalDatePicker");
         TextField arrivalTimeField = new TextField();
+        arrivalTimeField.setId("arrivalTimeField");
         arrivalTimeField.setPromptText("Arrival Time (HH:MM)");
 
         TextField economySeatsNumberField = new TextField();
+        economySeatsNumberField.setId("economySeatsNumberField");
         economySeatsNumberField.setPromptText("Economy Seats Number");
 
         TextField businessSeatsNumberField = new TextField();
+        businessSeatsNumberField.setId("businessSeatsNumberField");
         businessSeatsNumberField.setPromptText("Business Seats Number");
 
         TextField firstSeatsNumberField = new TextField();
+        firstSeatsNumberField.setId("firstSeatsNumberField");
         firstSeatsNumberField.setPromptText("First Seats Number");
 
         Button addFlightBtn = new Button("Add Flight");
+        addFlightBtn.setId("addFlightBtn");
 
         addFlightBtn.setOnAction(_ -> {
             String flightNumber = flightNumberField.getText();
@@ -2610,6 +2763,7 @@ public class FlightPlannerApp extends Application {
         });
 
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         vbox.getChildren().addAll(flightLabel, flightNumberField, departureField, arrivalField,
@@ -2622,8 +2776,10 @@ public class FlightPlannerApp extends Application {
     private void showPassengersList() {
         VBox vbox = new VBox(10);
         Label passengerLabel = new Label("Passengers List");
+        passengerLabel.setId("passengerLabel");
 
         TextArea passengersTextArea = new TextArea();
+        passengersTextArea.setId("passengersTextArea");
         passengersTextArea.setEditable(false);
         try {
             List<Passenger> passengers = flightPlanner.getPassengers();
@@ -2636,6 +2792,7 @@ public class FlightPlannerApp extends Application {
             passengersTextArea.setText("Error retrieving passengers.");
         }
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         vbox.getChildren().addAll(passengerLabel, passengersTextArea, backButton);
@@ -2646,8 +2803,10 @@ public class FlightPlannerApp extends Application {
     private void showFlightList() {
         VBox vbox = new VBox(10);
         Label flightsLabel = new Label("Flights List");
+        flightsLabel.setId("flightsLabel");
 
         TextArea flightsTextArea = new TextArea();
+        flightsTextArea.setId("flightsTextArea");
         flightsTextArea.setEditable(false);
 
         try {
@@ -2662,6 +2821,7 @@ public class FlightPlannerApp extends Application {
         }
 
         Button backButton = new Button("Back");
+        backButton.setId("backButton");
         backButton.setOnAction(_ -> showMainAppScreen());
 
         vbox.getChildren().addAll(flightsLabel, flightsTextArea, backButton);
