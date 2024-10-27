@@ -2135,7 +2135,7 @@ public class FlightPlannerApp extends Application {
             }
 
             if(flightPlanner.checkAirportNotExistence(departureAirportCode) || flightPlanner.checkAirportNotExistence(arrivalAirportCode)){
-                showAlert(Alert.AlertType.ERROR,"Invalid Input","Check first the existence of the airport.");
+                showAlert(Alert.AlertType.ERROR,"Invalid Input","Check first the existence of the airports.");
                 return;
             }
 
@@ -2710,6 +2710,11 @@ public class FlightPlannerApp extends Application {
             if (flightNumber.isEmpty() || departure.isEmpty() || arrival.isEmpty() || economySeatsNumberStr.isEmpty() || businessSeatsNumberStr.isEmpty()
             || firstSeatsNumberStr.isEmpty()) {
                 showAlert(Alert.AlertType.ERROR, "Input Error", "All fields are required.");
+                return;
+            }
+
+            if(flightPlanner.checkAirportNotExistence(departure) || flightPlanner.checkAirportNotExistence(arrival)){
+                showAlert(Alert.AlertType.ERROR,"Invalid Input","Check first the existence of the airports.");
                 return;
             }
 
