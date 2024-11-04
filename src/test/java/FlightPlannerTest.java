@@ -139,7 +139,7 @@ public class FlightPlannerTest {
         flightPlanner.removeAirport(airport.getCode());
 
         Airport removedAirport = flightPlanner.getAllAirports().stream()
-                .filter(a -> a.getCode().equalsIgnoreCase("F004"))
+                .filter(a -> a.getCode().equalsIgnoreCase("CDG"))
                 .findFirst()
                 .orElse(null);
         assertNull(removedAirport);

@@ -76,7 +76,7 @@ public class FlightPlanner {
         return flightClassPrices;
     }
 
-    public void updateFlightClassPrices(String flightNumber, String classType, Double newPrice) {
+    public void updateFlightClassPrices(String flightNumber, String classType, double newPrice) {
         if (flightClassPrices.containsKey(flightNumber)) {
             Map<String, Double> classPrices = flightClassPrices.get(flightNumber);
             if (classPrices.containsKey(classType)) {

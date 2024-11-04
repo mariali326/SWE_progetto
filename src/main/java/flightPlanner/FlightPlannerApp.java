@@ -162,7 +162,7 @@ public class FlightPlannerApp extends Application {
     }
 
     private void showUserInterface(VBox vbox) {
-        Label userLabel = new Label("Passenger Label");
+        Label userLabel = new Label("Passenger Panel");
         Label welcomeLabel = new Label("Welcome " + authManager.getLoggedInUser() + " !");
 
         Button viewBookingsButton = new Button("View Bookings");
