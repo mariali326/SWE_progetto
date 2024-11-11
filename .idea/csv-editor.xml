@@ -94,6 +94,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/src/main/resources/csv/luggage.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/src/main/resources/csv/luggages.csv">
           <value>
             <Attribute>
